@@ -72,16 +72,15 @@ def one_hot_encode(a):
   return m
 
 checkpoint = ModelCheckpoint('new/weights.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-
-#csv_logger = CSVLogger('./log.out', append=True, separator=';')
-
 earlystopping = EarlyStopping(monitor = 'val_loss', verbose = 1,min_delta = 0.01, patience = 3, mode = 'min')
-
 callbacks_list = [checkpoint, earlystopping]
 
-input_img = Input((240, 240, 4))
-model = Inception(input_img,16,0.1,True)
-model.compile(optimizer=Adam(lr=1e-5, beta_1=0.9, beta_2=0.999, epsilon=1e-08), loss=dice_coef_loss, metrics=[f1_score])
+input_img = Input((240, 155, 4))
+model = Unet_with_inception(input_img,16,0.1,True)
+learning_rate = 1e-5
+epochs = 30
+decay_rate = learning_rate / epochs
+model.compile(optimizer=Adam(lr=learning_rate, decay = decay_rate), loss=dice_coef_loss, metrics=[f1_score])
 model.summary()
 
 
@@ -93,15 +92,9 @@ path = '../Brats17TrainingData/HGG'
 all_images = os.listdir(path)
 #print(len(all_images))
 all_images.sort()
-
-#data = np.zeros((240,240,155,4),dtype='uint8')
-#data2 = np.zeros((240,240,155,1),dtype='uint8')
-Y = np.zeros((240,240))
-X = np.zeros((240,240,4))
 data = np.zeros((240,240,155,4))
-#data2 = np.zeros((240,240,155,5))
 
-for i in range(5):
+for i in range(10):
   print(i)
   x_to = []
   y_to = []
@@ -128,13 +121,13 @@ for i in range(5):
   print(image_data2.shape)  
 
     
-  for slice_no in range(0,155):
+  for slice_no in range(0,240):
     a = slice_no
-    X = data[:,:,slice_no,:]
+    X = data[:,slice_no,:,:]
 
-    Y = image_data2[:,:,slice_no]
+    Y = image_data2[:,slice_no,:]
 
-    if(X.any()!=0 and Y.any()!=0 and len(np.unique(Y)==4)):
+    if(X.any()!=0 and Y.any()!=0 and len(np.unique(Y))==4):
       #print(slice_no)
       x_to.append(X)
       y_to.append(Y)    
@@ -146,7 +139,7 @@ for i in range(5):
   print(y_to.shape)
 
   
-  y_to[y_to==4] = 3
+  y_to[y_to==4] = 3         #since label 4 was missing in Brats dataset , changing all labels 4 to 3.
   hello = y_to.flatten()
   #print(hello[hello==3].shape)
   print("Number of classes",np.unique(hello))
@@ -160,9 +153,9 @@ for i in range(5):
 
   
 
-  model.fit(x=x_to, y=y_to, batch_size=10, epochs=5,class_weight = class_weights)
+  model.fit(x=x_to, y=y_to, batch_size=10, epochs=4,class_weight = class_weights)
 
 
 
-model.save('survival_pred_240_240.h5')
+model.save('survival_pred_240_155_1.h5')
 

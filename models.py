@@ -315,9 +315,9 @@ def Inception(input_img, n_filters = 16 , dropout = 0.3 , batch_norm = True):   
 
 def survival_model():
   model = Sequential()
-  model.add(Dense(32,input_shape=(21,),kernel_regularizer=keras.regularizers.l1(0.4)))
+  model.add(Dense(32,input_shape=(20,),kernel_regularizer=keras.regularizers.l1(0.4) , activation='relu'))
   model.add(Dense(10,activation = 'relu'))
-  model.add(Dense(1))
+  model.add(Dense(1,activation = 'linear'))
 
   return model
 
@@ -340,5 +340,3 @@ def survival_model():
 #model2.compile(optimizer=Adam(lr=1e-5, beta_1=0.9, beta_2=0.999, epsilon=1e-08), loss="categorical_crossentropy", metrics=["accuracy"])
 #model2.summary()
 
-model = survival_model()
-model.summary()

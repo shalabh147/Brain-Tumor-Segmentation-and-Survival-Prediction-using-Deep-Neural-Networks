@@ -35,32 +35,16 @@ import numpy as np
 import cv2
 from utils import f1_score,dice_coef_loss,dice_coef,one_hot_encode
 
-'''
-checkpoint = ModelCheckpoint('new/weights.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-
-#csv_logger = CSVLogger('./log.out', append=True, separator=';')
-
-earlystopping = EarlyStopping(monitor = 'val_loss', verbose = 1,min_delta = 0.0007, patience = 4, mode = 'min')
-
-callbacks_list = [checkpoint, earlystopping]
-'''
-
-model_train = load_model('survival_pred.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
+model_train = load_model('survival_pred_240_155_1.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
 
 # data preprocessing starts here
 path = '../Brats17TrainingData/HGG'
 all_images = os.listdir(path)
 #print(len(all_images))
 all_images.sort()
-
-#data = np.zeros((240,240,155,4),dtype='uint8')
-#data2 = np.zeros((240,240,155,1),dtype='uint8')
-Y = np.zeros((240,155))
-X = np.zeros((240,155,4))
 data = np.zeros((240,240,155,4))
-#data2 = np.zeros((240,240,155,5))
 
-for i in range(70,80):
+for i in range(80,90):
   print(i)
   x_to = []
   y_to = []
@@ -93,10 +77,13 @@ for i in range(70,80):
 
     Y = image_data2[:,slice_no,:]
 
-    if(X.any()!=0 and Y.any()!=0):
+    if(X.any()!=0 and Y.any()!=0 and len(np.unique(Y))==4):
       #print(slice_no)
       x_to.append(X)
-      y_to.append(Y)    
+      y_to.append(Y)   
+
+  if len(x_to) <= 27:
+  	continue; 
       
 
   x_to = np.asarray(x_to)
@@ -104,20 +91,23 @@ for i in range(70,80):
   print(x_to.shape)
   print(y_to.shape)
 
+  
+  y_to[y_to==4] = 3         #since label 4 was missing in Brats dataset , changing all labels 4 to 3.
   hello = y_to.flatten()
-  print(hello[hello==3].shape)
+  #print(hello[hello==3].shape)
   print("Number of classes",np.unique(hello))
   class_weights = class_weight.compute_class_weight('balanced',np.unique(hello),hello)
+  
+  #class_weights.insert(3,0)
   print("class_weights",class_weights)
-
   y_to = one_hot_encode(y_to)
   print(y_to.shape)
 
 
   
 
-  model_train.fit(x=x_to, y=y_to, batch_size=10, epochs=5,class_weight = class_weights)
+  model_train.fit(x=x_to, y=y_to, batch_size=9, epochs=4,class_weight = class_weights)
 
 
 
-model_train.save('survival_pred.h5')
+model_train.save('survival_pred_240_155_1.h5')

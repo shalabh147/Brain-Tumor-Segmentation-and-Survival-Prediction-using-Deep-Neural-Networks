@@ -45,7 +45,11 @@ earlystopping = EarlyStopping(monitor = 'val_loss', verbose = 1,min_delta = 0.00
 callbacks_list = [checkpoint, earlystopping]
 '''
 model_train = load_model('survival_pred_240_240.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
-
+learning_rate = 1e-6
+epochs = 10
+decay_rate = learning_rate / epochs
+momentum = 0.8
+model_train.compile(optimizer=Adam(lr=learning_rate,decay = decay_rate), loss=dice_coef_loss, metrics=[f1_score])
 # data preprocessing starts here
 path = '../Brats17TrainingData/HGG'
 all_images = os.listdir(path)
@@ -59,7 +63,7 @@ X = np.zeros((240,240,4))
 data = np.zeros((240,240,155,4))
 #data2 = np.zeros((240,240,155,5))
 
-for i in range(15,25):
+for i in range(105,110):
   print(i)
   x_to = []
   y_to = []
@@ -75,9 +79,11 @@ for i in range(15,25):
     image_path = folder_path + '/' + modalities[j]
     if(image_path[-7:-1] + image_path[-1] == 'seg.nii'):
       image_data2, image_header2 = load(image_path);
+      print(np.unique(image_data2))
       print("Entered ground truth")
     else:
       image_data, image_header = load(image_path);
+      
       data[:,:,:,w] = image_data
       print("Entered modality")
       w = w+1
@@ -92,11 +98,14 @@ for i in range(15,25):
 
     Y = image_data2[:,:,slice_no]
 
-    if(X.any()!=0 and Y.any()!=0 and len(np.unique(Y)==4)):
+    if(X.any()!=0 and Y.any()!=0 ):
       #print(slice_no)
       x_to.append(X)
       y_to.append(Y)    
       
+
+  #if len(x_to) <= 24:
+  #  continue;
 
   x_to = np.asarray(x_to)
   y_to = np.asarray(y_to)
@@ -107,18 +116,18 @@ for i in range(15,25):
   y_to[y_to==4] = 3
   hello = y_to.flatten()
   #print(hello[hello==3].shape)
-  print("Number of classes",np.unique(hello))
-  class_weights = class_weight.compute_class_weight('balanced',np.unique(hello),hello)
+ # print("Number of classes",np.unique(hello))
+ # class_weights = class_weight.compute_class_weight('balanced',np.unique(hello),hello)
   
   #class_weights.insert(3,0)
-  print("class_weights",class_weights)
+  #print("class_weights",class_weights)
   y_to = one_hot_encode(y_to)
   print(y_to.shape)
 
 
   
 
-  model_train.fit(x=x_to, y=y_to, batch_size=10, epochs=5,class_weight = class_weights)
+  model_train.fit(x=x_to, y=y_to, batch_size=8, epochs=5)
 
 
 

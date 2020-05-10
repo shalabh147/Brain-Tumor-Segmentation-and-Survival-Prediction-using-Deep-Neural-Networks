@@ -1,5 +1,5 @@
-#import random
-#import pandas as pd
+import random
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 #%matplotlib inline
@@ -15,18 +15,18 @@ from keras.layers.pooling import MaxPooling2D, GlobalMaxPool2D,MaxPooling3D
 from keras.layers.merge import concatenate, add
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from keras.optimizers import Adam
-#from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
+from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 
 from skimage.io import imread, imshow, concatenate_images
 from skimage.transform import resize
 
 import os
-#from skimage.io import imread, imshow, concatenate_images
-#from skimage.transform import resize
+from skimage.io import imread, imshow, concatenate_images
+from skimage.transform import resize
 from medpy.io import load
 import numpy as np
 
-#import cv2
+import cv2
 from sklearn import metrics
 from sklearn_extra.cluster import KMedoids
 
@@ -63,21 +63,24 @@ layer_name = 'dropout_4'
 
 intermediate_layer_model = Model(inputs=base_model.get_layer('input_1').input,outputs=base_model.get_layer(layer_name).output)
 
-path = '../Brats17TrainingData/HGG'
+path = '../Brats17TrainingData/LGG'
 all_images = os.listdir(path)
 #print(len(all_images))
 
-model_train = survival_model()
-model_train.compile(optimizer=Adam(),loss='mean_squared_error')
-
+#model_train = survival_model()
+#model_train.compile(optimizer=Adam(),loss='mean_squared_error',metrics=['mean_squared_error'])
 import xgboost as xgb
-xg_reg = xgb.XGBRegressor(objective ='reg:squarederror', colsample_bytree = 0.3, learning_rate = 0.01, max_depth = 5, alpha = 10)
-early_stopping_monitor = EarlyStopping(patience=3)
+#xg_reg = xgb.XGBRegressor(objective ='reg:linear', colsample_bytree = 0.3, learning_rate = 0.1, max_depth = 5, alpha = 10)
+loaded_model = pickle.load(open("pima.pickle.dat", "rb"))
+
+loaded2 = load_model('dense_prediction.h5')
+
 
 to_train = []
 ground_truth = []
 data = np.zeros((240,240,155,4))
-for i in range(0,210):
+for i in range(0,50):
+	
 	print(i)
 	final_image_features = []
 	x_to = []
@@ -116,7 +119,7 @@ for i in range(0,210):
 			if(X.any()!=0 and Y.any()!=0 and len(np.unique(Y))==4):
 				#print(X.shape)
 				new_features = intermediate_layer_model.predict(X)
-				#print(slice_no)
+				print(slice_no)
 				new_features = new_features.reshape(1*5*5*128)
 				new_features = np.unique(new_features)
 
@@ -147,7 +150,7 @@ for i in range(0,210):
 		
 		reduced_features.append(age_dict[m])
 		reduced_features = np.asarray(reduced_features)	
-		#print(reduced_features)
+		print(reduced_features)
 
 		truth = days_dict[m]
 
@@ -168,18 +171,65 @@ for i in range(0,210):
 
 to_train = np.asarray(to_train)
 ground_truth = np.asarray(ground_truth)
-
 print(to_train.shape)
 print(ground_truth.shape)
 
-xg_reg.fit(to_train,ground_truth)									#XGBoostREgressor model to try out
-pickle.dump(xg_reg, open("pima.pickle.dat", "wb"))					#saving model to file pima.pickle.dat
+from sklearn.metrics import accuracy_score
 
-#X_train, X_val, y_train, y_val = train_test_split(to_train, ground_truth, test_size=0.2, random_state=1)
-#print("Training set size",X_train.shape)
-#print("Validation set size",X_val.shape)
+y_pred1 = loaded_model.predict(to_train)
+y_pred2 = loaded2.predict(to_train)
+print(y_pred1)
+print(y_pred2)
+print(ground_truth)
+predictions = [round(value) for value in y_pred1]
+# evaluate predictions
+accuracy = accuracy_score(ground_truth, predictions)
+#pickle.dump(xg_reg, open("pima.pickle.dat", "wb"))
 
-model_train.fit(x=to_train,y=ground_truth,validation_split = 0.2,epochs = 1000 ,callbacks = [early_stopping_monitor]  )
-model_train.save('dense_prediction.h5')
+print("Accuracy: %.2f%%" % (accuracy * 100.0))
 
 
+
+	# now take 19 of these total final_image_features,append age to it and feed it to survival model to train
+
+
+	
+'''
+new_image = new_image.reshape(1,128,128,4)
+new_image = tf.cast(new_image,tf.float32)
+print(new_image.shape)
+
+
+print(base_model.summary())
+
+
+new_features = base_model(new_image)
+print(new_features[0][100][100][2])
+
+
+
+
+new_features = intermediate_layer_model(new_image)
+print(new_features.shape)
+
+#proto_tensor = tf.compat.v1.make_tensor_proto(new_features)  # convert `tensor a` to a proto tensor
+#hello = tf.make_ndarray(new_features)
+from keras import backend as K
+new = K.eval(new_features)
+new_damn = new.reshape(1*8*8*256)
+
+new_damn = np.unique(new_damn)
+print(new_damn.shape)
+#from k_medoids import kmedoids
+#a = kmedoids(new_damn,20,2)
+#print(new_damn.shape)
+
+
+
+kmedoids = KMedoids(n_clusters=20, random_state=0).fit(features)
+
+print(kmedoids.cluster_centers_)
+
+model = survival_model()
+model.fit(x=features,y=survival)
+'''
