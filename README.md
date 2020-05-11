@@ -38,6 +38,7 @@ Brats 2015 dataset composed of labels 0,1,2,3,4 while Brats 2017 dataset consist
 ## BRATS Dataset 
 I have used BRATS 2017 training dataset for the analysis of the proposed methodology. It consists of real patient images as well as synthetic images created by MICCAI. Each of these folders are then subdivided into High Grade and Low Grade images. For each patient, four modalities(T1, T1-C, T2 and FLAIR) are provided. The fifth image has ground truth labels for each pixel. The dimensions of images are (240,240,155) in both.
 
+![](Dataset.png)
 
 
 ## Dataset pre-processing 
@@ -65,7 +66,7 @@ As shown by https://link.springer.com/chapter/10.1007/978-3-319-75238-9_17, I cr
 XGBoost Regression (Extreme gradient boosting regressor) has been found to perform really well in regression related tasks. It is one of the model used to train on features extracted from the bottleneck layer of the U-Net . This idea has been taken from https://arxiv.org/pdf/1903.11593.pdf where it has been shown that lung cancer survival features are somehow connected to the bottleneck layer features of the segmentation U-Net. Another network used is a feedforward neural network taking reduced features(using k-medoids clustering) from images and being trained for regression. 
 
 
-
+### Note : All images have been taken from the mentioned papers.
 
 ## Training
 ### Loss function
