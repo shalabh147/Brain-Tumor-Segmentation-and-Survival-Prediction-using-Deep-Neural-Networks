@@ -34,51 +34,16 @@ import numpy as np
 
 import cv2
 
-def f1_score(y_true, y_pred):
+from utils import dice_coef_loss,dice_coef,f1_score,one_hot_encode
 
-    # Count positive samples.
-    c1 = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    c2 = K.sum(K.round(K.clip(y_true, 0, 1)))
-    c3 = K.sum(K.round(K.clip(y_pred, 0, 1)))
-
-    # If there are no true samples, fix the F1 score at 0.
-    if c3 == 0:
-        return 0
-
-    # How many selected items are relevant?
-    precision = c1 / c2
-
-    # How many relevant items are selected?
-    recall = c1 / c3
-
-    # Calculate f1_score
-    f1_score = 2 * (precision * recall) / (precision + recall)
-    return f1_score
-
-def dice_coef(y_true, y_pred, smooth=1):
-    """
-    Dice = (2*|X & Y|)/ (|X|+ |Y|)
-         =  2*sum(|A*B|)/(sum(A^2)+sum(B^2))
-    ref: https://arxiv.org/pdf/1606.04797v1.pdf
-    """
-    intersection = K.sum(K.abs(y_true * y_pred), axis=-1)
-    return (2. * intersection + smooth) / (K.sum(K.square(y_true),-1) + K.sum(K.square(y_pred),-1) + smooth)
-
-def dice_coef_loss(y_true, y_pred):
-    return 1-dice_coef(y_true, y_pred)
-
-def one_hot_encode(a):
-  m = (np.arange(4) == a[...,None]).astype(int)
-  return m
-
-checkpoint = ModelCheckpoint('new/weights.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-earlystopping = EarlyStopping(monitor = 'val_loss', verbose = 1,min_delta = 0.01, patience = 3, mode = 'min')
-callbacks_list = [checkpoint, earlystopping]
+#checkpoint = ModelCheckpoint('new/weights.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+#earlystopping = EarlyStopping(monitor = 'val_loss', verbose = 1,min_delta = 0.01, patience = 3, mode = 'min')
+#callbacks_list = [checkpoint, earlystopping]
 
 input_img = Input((240, 155, 4))
 model = Unet_with_inception(input_img,16,0.1,True)
 learning_rate = 1e-5
-epochs = 30
+epochs = 100
 decay_rate = learning_rate / epochs
 model.compile(optimizer=Adam(lr=learning_rate, decay = decay_rate), loss=dice_coef_loss, metrics=[f1_score])
 model.summary()
@@ -123,9 +88,9 @@ for i in range(10):
     
   for slice_no in range(0,240):
     a = slice_no
-    X = data[:,slice_no,:,:]
+    X = data[slice_no,:,:,:]
 
-    Y = image_data2[:,slice_no,:]
+    Y = image_data2[slice_no,:,:]
 
     if(X.any()!=0 and Y.any()!=0 and len(np.unique(Y))==4):
       #print(slice_no)
@@ -157,5 +122,5 @@ for i in range(10):
 
 
 
-model.save('survival_pred_240_155_1.h5')
+model.save('Models/survival_pred_240_155_2.h5')
 

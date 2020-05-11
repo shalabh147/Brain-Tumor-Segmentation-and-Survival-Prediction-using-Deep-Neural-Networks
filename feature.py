@@ -72,12 +72,12 @@ model_train.compile(optimizer=Adam(),loss='mean_squared_error')
 
 import xgboost as xgb
 xg_reg = xgb.XGBRegressor(objective ='reg:squarederror', colsample_bytree = 0.3, learning_rate = 0.01, max_depth = 5, alpha = 10)
-early_stopping_monitor = EarlyStopping(patience=3)
+#early_stopping_monitor = EarlyStopping(patience=3)
 
 to_train = []
 ground_truth = []
 data = np.zeros((240,240,155,4))
-for i in range(0,210):
+for i in range(0,164):
 	print(i)
 	final_image_features = []
 	x_to = []
@@ -179,7 +179,7 @@ pickle.dump(xg_reg, open("pima.pickle.dat", "wb"))					#saving model to file pim
 #print("Training set size",X_train.shape)
 #print("Validation set size",X_val.shape)
 
-model_train.fit(x=to_train,y=ground_truth,validation_split = 0.2,epochs = 1000 ,callbacks = [early_stopping_monitor]  )
-model_train.save('dense_prediction.h5')
+model_train.fit(x=to_train,y=ground_truth,epochs = 1000)
+model_train.save('Models/dense_prediction.h5')
 
 

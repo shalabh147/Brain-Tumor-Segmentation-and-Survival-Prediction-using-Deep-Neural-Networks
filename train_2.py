@@ -44,7 +44,7 @@ earlystopping = EarlyStopping(monitor = 'val_loss', verbose = 1,min_delta = 0.00
 
 callbacks_list = [checkpoint, earlystopping]
 '''
-model_train = load_model('survival_pred_240_240.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
+model_train = load_model('Models/survival_pred_240_240.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
 learning_rate = 1e-6
 epochs = 10
 decay_rate = learning_rate / epochs

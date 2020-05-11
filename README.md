@@ -38,7 +38,7 @@ Brats 2015 dataset composed of labels 0,1,2,3,4 while Brats 2017 dataset consist
 ## BRATS Dataset 
 I have used BRATS 2017 training dataset for the analysis of the proposed methodology. It consists of real patient images as well as synthetic images created by MICCAI. Each of these folders are then subdivided into High Grade and Low Grade images. For each patient, four modalities(T1, T1-C, T2 and FLAIR) are provided. The fifth image has ground truth labels for each pixel. The dimensions of images are (240,240,155) in both.
 
-![](Capture2.PNG)
+![](U-net.png)
 
 ## Dataset pre-processing 
 Model has been trained on only those slices having all 4 labels(0,1,2,4) to tackle class imbalance and label 4 has been converted into label 3 (so that finally the one-hot encoding has size 4).

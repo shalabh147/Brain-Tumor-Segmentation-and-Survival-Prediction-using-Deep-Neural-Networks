@@ -35,7 +35,7 @@ import numpy as np
 import cv2
 from utils import f1_score,dice_coef_loss,dice_coef,one_hot_encode
 
-model_train = load_model('survival_pred_240_155_1.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
+model_train = load_model('Models/survival_pred_240_155_2.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
 
 # data preprocessing starts here
 path = '../Brats17TrainingData/HGG'
@@ -44,7 +44,7 @@ all_images = os.listdir(path)
 all_images.sort()
 data = np.zeros((240,240,155,4))
 
-for i in range(80,90):
+for i in range(50,60):
   print(i)
   x_to = []
   y_to = []
@@ -73,18 +73,18 @@ for i in range(80,90):
     
   for slice_no in range(0,240):
     a = slice_no
-    X = data[:,slice_no,:,:]
+    X = data[slice_no,:,:,:]
 
-    Y = image_data2[:,slice_no,:]
+    Y = image_data2[slice_no,:,:]
 
     if(X.any()!=0 and Y.any()!=0 and len(np.unique(Y))==4):
       #print(slice_no)
       x_to.append(X)
-      y_to.append(Y)   
+      y_to.append(Y)    
+      
 
   if len(x_to) <= 27:
-  	continue; 
-      
+  	continue;
 
   x_to = np.asarray(x_to)
   y_to = np.asarray(y_to)
@@ -110,4 +110,4 @@ for i in range(80,90):
 
 
 
-model_train.save('survival_pred_240_155_1.h5')
+model_train.save('survival_pred_240_155_2.h5')

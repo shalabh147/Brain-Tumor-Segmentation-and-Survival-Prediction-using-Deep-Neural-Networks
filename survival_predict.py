@@ -58,12 +58,12 @@ with open('survival_data.csv', mode='r') as csv_file:
 
 from utils import one_hot_encode,dice_coef_loss,dice_coef,f1_score
 
-base_model = load_model('survival_pred.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
+base_model = load_model('Models/survival_pred.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
 layer_name = 'dropout_4'
 
 intermediate_layer_model = Model(inputs=base_model.get_layer('input_1').input,outputs=base_model.get_layer(layer_name).output)
 
-path = '../Brats17TrainingData/LGG'
+path = '../Brats17TrainingData/HGG'
 all_images = os.listdir(path)
 #print(len(all_images))
 
@@ -73,13 +73,13 @@ import xgboost as xgb
 #xg_reg = xgb.XGBRegressor(objective ='reg:linear', colsample_bytree = 0.3, learning_rate = 0.1, max_depth = 5, alpha = 10)
 loaded_model = pickle.load(open("pima.pickle.dat", "rb"))
 
-loaded2 = load_model('dense_prediction.h5')
+loaded2 = load_model('Models/dense_prediction.h5')
 
 
 to_train = []
 ground_truth = []
 data = np.zeros((240,240,155,4))
-for i in range(0,50):
+for i in range(170,175):
 	
 	print(i)
 	final_image_features = []

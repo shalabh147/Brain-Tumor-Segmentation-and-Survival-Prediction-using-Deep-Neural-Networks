@@ -322,7 +322,26 @@ def survival_model():
   return model
 
 
+def dense_without_bottleneck(input_mat , kernel_dim):
+  a = Conv2D(kernel_dim,kernel_size = (kernel_dim,kernel_dim),strides = (1,1),padding = 'same')(input_mat)
+  a = Activation('elu')
 
+  a = concatenate([input_mat,a])
+
+  return a
+
+def dense_with_bottleneck(input_mat,kernel_dim):
+  a = Conv2D(4*kernel_dim,kernel_size = (1,1) , strides = (1,1), padding = 'same')(input_mat)
+  a = Activation('elu')
+
+  a = Conv2D(kernel_dim,kernel_size = (kernel_dim,kernel_dim),strides = (1,1),padding = 'same')(input_mat)
+  a = Activation('elu')
+
+  a = concatenate([input_mat,a])
+
+  return a
+
+#def 
 #from utils import one_hot_encode,dice_coef_loss,dice_coef,f1_score
 
 #base_model = load_model('survival_pred.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
