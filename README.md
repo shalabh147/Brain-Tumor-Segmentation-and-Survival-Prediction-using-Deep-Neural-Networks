@@ -11,12 +11,12 @@ You are free to use contents of this repo for academic and non-commercial purpos
 ## Resources
 As such, this code is not an implementation of a particular paper,and is combined of many architectures and deep learning techniques from various research papers on Brain Tumor Segmentation and survival prediction. Some of the best resources used are mentioned below.
 
-https://arxiv.org/pdf/1505.03540.pdf : Patch based Brain Tumor Segmentation
-https://www.biorxiv.org/content/10.1101/760157v1.full.pdf : Encoder Decoder network with dice loss
-https://arxiv.org/pdf/1802.10508v1.pdf : Unet Architecture
-https://arxiv.org/pdf/1903.11593.pdf : Survival Prediction Idea of extracting features
-https://link.springer.com/chapter/10.1007/978-3-319-75238-9_17 : Integrating results along the 3 axis and different models
-https://link.springer.com/chapter/10.1007/978-3-319-75238-9_30: Inception U-Net
+- https://arxiv.org/pdf/1505.03540.pdf : Patch based Brain Tumor Segmentation
+- https://www.biorxiv.org/content/10.1101/760157v1.full.pdf : Encoder Decoder network with dice loss
+- https://arxiv.org/pdf/1802.10508v1.pdf : Unet Architecture
+- https://arxiv.org/pdf/1903.11593.pdf : Survival Prediction Idea of extracting features
+- https://link.springer.com/chapter/10.1007/978-3-319-75238-9_17 : Integrating results along the 3 axis and different models
+- https://link.springer.com/chapter/10.1007/978-3-319-75238-9_30: Inception U-Net
 
 
 
