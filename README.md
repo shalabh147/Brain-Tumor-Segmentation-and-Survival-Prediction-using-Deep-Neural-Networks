@@ -71,7 +71,6 @@ As shown by https://link.springer.com/chapter/10.1007/978-3-319-75238-9_17, I cr
 ### DenseNet Architecture with Dilated Convolutions
 As shown in https://link.springer.com/chapter/10.1007/978-3-319-75238-9_15 , the transition layers in Densely connected architecture were modified to replace Pooling layers to Dilated Convolutions(which increase receptive field without losing spatial information). Two different type of dense units were built, one containing bottleneck 1*1 convolutions to reduce parameters and thus computation and one without bottleneck.
 
-![](Captures/DenseNet.png) 
 
 ### Survival Prediction Model
 XGBoost Regression (Extreme gradient boosting regressor) has been found to perform really well in regression related tasks. It is one of the model used to train on features extracted from the bottleneck layer of the U-Net . This idea has been taken from https://arxiv.org/pdf/1903.11593.pdf where it has been shown that lung cancer survival features are somehow connected to the bottleneck layer features of the segmentation U-Net. Another network used is a feedforward neural network taking reduced features(using k-medoids clustering) from images and being trained for regression. 
