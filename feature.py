@@ -58,7 +58,7 @@ with open('survival_data.csv', mode='r') as csv_file:
 
 from utils import one_hot_encode,dice_coef_loss,dice_coef,f1_score
 
-base_model = load_model('survival_pred.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
+base_model = load_model('Models/survival_pred.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
 layer_name = 'dropout_4'
 
 intermediate_layer_model = Model(inputs=base_model.get_layer('input_1').input,outputs=base_model.get_layer(layer_name).output)
@@ -68,7 +68,7 @@ all_images = os.listdir(path)
 #print(len(all_images))
 
 model_train = survival_model()
-model_train.compile(optimizer=Adam(),loss='mean_squared_error')
+model_train.compile(optimizer=Adam(),loss='mean_squared_logarithmic_error')
 
 import xgboost as xgb
 xg_reg = xgb.XGBRegressor(objective ='reg:squarederror', colsample_bytree = 0.3, learning_rate = 0.01, max_depth = 5, alpha = 10)
@@ -77,7 +77,7 @@ xg_reg = xgb.XGBRegressor(objective ='reg:squarederror', colsample_bytree = 0.3,
 to_train = []
 ground_truth = []
 data = np.zeros((240,240,155,4))
-for i in range(0,164):
+for i in range(0,174):
 	print(i)
 	final_image_features = []
 	x_to = []
@@ -179,7 +179,7 @@ pickle.dump(xg_reg, open("pima.pickle.dat", "wb"))					#saving model to file pim
 #print("Training set size",X_train.shape)
 #print("Validation set size",X_val.shape)
 
-model_train.fit(x=to_train,y=ground_truth,epochs = 1000)
+model_train.fit(x=to_train,y=ground_truth,epochs = 1500,batch_size = 15)
 model_train.save('Models/dense_prediction.h5')
 
 

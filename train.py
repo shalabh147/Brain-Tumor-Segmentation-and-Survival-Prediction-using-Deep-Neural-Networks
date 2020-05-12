@@ -44,7 +44,7 @@ all_images = os.listdir(path)
 all_images.sort()
 data = np.zeros((240,240,155,4))
 
-for i in range(50,60):
+for i in range(60,70):
   print(i)
   x_to = []
   y_to = []

@@ -17,7 +17,7 @@ As such, this code is not an implementation of a particular paper,and is combine
 - https://arxiv.org/pdf/1903.11593.pdf : Survival Prediction Idea of extracting features
 - https://link.springer.com/chapter/10.1007/978-3-319-75238-9_17 : Integrating results along the 3 axis and different models
 - https://link.springer.com/chapter/10.1007/978-3-319-75238-9_30: Inception U-Net
-
+- https://link.springer.com/chapter/10.1007/978-3-319-75238-9_15 : Pooling free DenseNet architecture
 
 
 ## Key Points and Modifications
@@ -51,16 +51,27 @@ Training on patches of size 128*128 from the second dimension (2D slices of (240
 
 ![](Captures/U-net.png)
 
+
 ### Full Image U-Net
 Training on 2nd dimension of the images(2D slices of dimension 240*155) since 3D U-Net is computationally very expensive and hence undesirable. Limitation is unable to learn 3D neighbourhood features.
 
 ### U-Net with Inception
 https://link.springer.com/chapter/10.1007/978-3-319-75238-9_30 shows inception model U-net gives better results than conventional U-Net architecture and is thus preferred. In inception model, convolutions and poolings are averaged over 1*1 , 3*3 and 5*5 sized kernels, thus taking care of high receptive fiels as well as integration of local and global features.
 
+![](Captures/Inception.png)
+
+
+
 ### Combining along the 3 views
 As shown by https://link.springer.com/chapter/10.1007/978-3-319-75238-9_17, I created different models for axial,sagittal and coronal 2D views of the 3D modality and trained on each of them. After that the 3 models were combined to predict labels for each image. The combination can be done using max or average of probabilities predicted by the 3 models for the 4 classes on each pixel.Then the final prediction is made using argmax function.
 
 ![](Captures/ensembling.png)
+
+
+### DenseNet Architecture with Dilated Convolutions
+As shown in https://link.springer.com/chapter/10.1007/978-3-319-75238-9_15 , the transition layers in Densely connected architecture were modified to replace Pooling layers to Dilated Convolutions(which increase receptive field without losing spatial information). Two different type of dense units were built, one containing bottleneck 1*1 convolutions to reduce parameters and thus computation and one without bottleneck.
+
+![](Captures/DenseNet.png) 
 
 ### Survival Prediction Model
 XGBoost Regression (Extreme gradient boosting regressor) has been found to perform really well in regression related tasks. It is one of the model used to train on features extracted from the bottleneck layer of the U-Net . This idea has been taken from https://arxiv.org/pdf/1903.11593.pdf where it has been shown that lung cancer survival features are somehow connected to the bottleneck layer features of the segmentation U-Net. Another network used is a feedforward neural network taking reduced features(using k-medoids clustering) from images and being trained for regression. 
