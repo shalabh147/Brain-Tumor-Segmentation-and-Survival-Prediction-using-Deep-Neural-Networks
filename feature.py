@@ -35,8 +35,23 @@ from models import survival_model
 import csv
 import pickle
 
+from joblib import dump
+
 age_dict = {}
 days_dict = {}
+
+
+def encode(truth):
+	#print(truth)
+	truth = int(truth)
+
+	if(truth < 300):
+		return 1
+	elif(truth >= 300 and truth <= 450):
+		return 2
+	else:
+		return 3
+
 
 with open('survival_data.csv', mode='r') as csv_file:
     csv_reader = csv.reader(csv_file,delimiter = ',')
@@ -70,8 +85,8 @@ all_images = os.listdir(path)
 model_train = survival_model()
 model_train.compile(optimizer=Adam(),loss='mean_squared_logarithmic_error')
 
-import xgboost as xgb
-xg_reg = xgb.XGBRegressor(objective ='reg:squarederror', colsample_bytree = 0.3, learning_rate = 0.01, max_depth = 5, alpha = 10)
+#import xgboost as xgb
+#xg_reg = xgb.XGBRegressor(objective ='reg:squarederror', colsample_bytree = 0.3, learning_rate = 0.01, max_depth = 5, alpha = 10)
 #early_stopping_monitor = EarlyStopping(patience=3)
 
 to_train = []
@@ -157,7 +172,8 @@ for i in range(0,174):
 		#reduced_features = reduced_features.reshape(1,20)
 
 		to_train.append(reduced_features)
-		ground_truth.append(truth)
+		print("truth",truth)
+		ground_truth.append(encode(truth))
 
 		#if len(to_train) == 10:
 		#	to_train = np.asarray(to_train)
@@ -172,14 +188,22 @@ ground_truth = np.asarray(ground_truth)
 print(to_train.shape)
 print(ground_truth.shape)
 
-xg_reg.fit(to_train,ground_truth)									#XGBoostREgressor model to try out
-pickle.dump(xg_reg, open("pima.pickle.dat", "wb"))					#saving model to file pima.pickle.dat
+#xg_reg.fit(to_train,ground_truth)									#XGBoostREgressor model to try out
+#pickle.dump(xg_reg, open("pima.pickle.dat", "wb"))					#saving model to file pima.pickle.dat
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+
+clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
+clf.fit(to_train,ground_truth)
+
+dump(clf,'SVMfit.joblib')
 
 #X_train, X_val, y_train, y_val = train_test_split(to_train, ground_truth, test_size=0.2, random_state=1)
 #print("Training set size",X_train.shape)
 #print("Validation set size",X_val.shape)
 
 model_train.fit(x=to_train,y=ground_truth,epochs = 1500,batch_size = 15)
-model_train.save('Models/dense_prediction.h5')
+model_train.save('Models/dense_survival_classifier.h5')
 
 

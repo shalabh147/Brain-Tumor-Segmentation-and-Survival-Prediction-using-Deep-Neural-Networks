@@ -79,7 +79,7 @@ loaded2 = load_model('Models/dense_prediction.h5')
 to_train = []
 ground_truth = []
 data = np.zeros((240,240,155,4))
-for i in range(170,175):
+for i in range(180,185):
 	
 	print(i)
 	final_image_features = []
@@ -190,46 +190,3 @@ print("Accuracy: %.2f%%" % (accuracy * 100.0))
 
 
 
-	# now take 19 of these total final_image_features,append age to it and feed it to survival model to train
-
-
-	
-'''
-new_image = new_image.reshape(1,128,128,4)
-new_image = tf.cast(new_image,tf.float32)
-print(new_image.shape)
-
-
-print(base_model.summary())
-
-
-new_features = base_model(new_image)
-print(new_features[0][100][100][2])
-
-
-
-
-new_features = intermediate_layer_model(new_image)
-print(new_features.shape)
-
-#proto_tensor = tf.compat.v1.make_tensor_proto(new_features)  # convert `tensor a` to a proto tensor
-#hello = tf.make_ndarray(new_features)
-from keras import backend as K
-new = K.eval(new_features)
-new_damn = new.reshape(1*8*8*256)
-
-new_damn = np.unique(new_damn)
-print(new_damn.shape)
-#from k_medoids import kmedoids
-#a = kmedoids(new_damn,20,2)
-#print(new_damn.shape)
-
-
-
-kmedoids = KMedoids(n_clusters=20, random_state=0).fit(features)
-
-print(kmedoids.cluster_centers_)
-
-model = survival_model()
-model.fit(x=features,y=survival)
-'''

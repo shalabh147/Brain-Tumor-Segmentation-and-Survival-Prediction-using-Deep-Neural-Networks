@@ -38,13 +38,13 @@ from utils import f1_score,dice_coef_loss,dice_coef,one_hot_encode
 model_train = load_model('Models/survival_pred_240_155_2.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
 
 # data preprocessing starts here
-path = '../Brats17TrainingData/HGG'
+path = '../Brats17TrainingData/LGG'
 all_images = os.listdir(path)
 #print(len(all_images))
 all_images.sort()
 data = np.zeros((240,240,155,4))
 
-for i in range(60,70):
+for i in range(10,20):
   print(i)
   x_to = []
   y_to = []
@@ -110,4 +110,4 @@ for i in range(60,70):
 
 
 
-model_train.save('survival_pred_240_155_2.h5')
+model_train.save('Models/survival_pred_240_155_2.h5')

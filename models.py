@@ -326,6 +326,8 @@ def dense_without_bottleneck(input_mat , kernel_dim , growth_rate):
   a = Conv2D(growth_rate,kernel_size = (kernel_dim,kernel_dim),strides = (1,1),padding = 'same')(input_mat)
   a = Activation('elu')(a)
 
+  a = BatchNormalization()(a)
+
 
   a = concatenate([input_mat,a])
 
@@ -337,16 +339,24 @@ def dense_with_bottleneck(input_mat,kernel_dim,dilation,growth_rate):
     a = Conv2D(growth_rate,kernel_size = (1,1) , strides = (1,1), padding = 'same')(input_mat)
     a = Activation('elu')(a)
 
+    a = BatchNormalization()(a)
+
     a = Conv2D(growth_rate,kernel_size = (kernel_dim,kernel_dim),strides = (1,1),padding = 'same')(input_mat)
     a = Activation('elu')(a)
+
+    a = BatchNormalization()(a)
 
     a = concatenate([input_mat,a])
   else:
     a = Conv2D(growth_rate,kernel_size = (1,1) , strides = (1,1), padding = 'same')(input_mat)
     a = Activation('elu')(a)
 
+    a = BatchNormalization()(a)
+
     a = Conv2D(growth_rate,kernel_size = (kernel_dim,kernel_dim),strides = (1,1),padding = 'same',dilation_rate = dilation)(input_mat)
     a = Activation('elu')(a)
+
+    a = BatchNormalization()(a)
 
     a = concatenate([input_mat,a])
 
@@ -365,25 +375,35 @@ def DeepScan(input_mat):
   a = dense_without_bottleneck(a,3,12)
   a = dense_without_bottleneck(a,3,12)
 
+  a = Dropout(0.3)(a)
+
   a = dense_with_bottleneck(a,5,2,24)
   a = dense_with_bottleneck(a,5,2,24)
   a = dense_with_bottleneck(a,5,2,24)
   a = dense_with_bottleneck(a,5,2,24)
+
+  a = Dropout(0.3)(a)
 
   a = dense_with_bottleneck(a,5,4,24)
   a = dense_with_bottleneck(a,5,4,24)
   a = dense_with_bottleneck(a,5,4,24)
   a = dense_with_bottleneck(a,5,4,24)
 
+  a = Dropout(0.3)(a)
+
   a = dense_with_bottleneck(a,5,8,24)
   a = dense_with_bottleneck(a,5,8,24)
   a = dense_with_bottleneck(a,5,8,24)
   a = dense_with_bottleneck(a,5,8,24)
 
+  a = Dropout(0.3)(a)
+
   a = dense_with_bottleneck(a,5,16,24)
   a = dense_with_bottleneck(a,5,16,24)
   a = dense_with_bottleneck(a,5,16,24)
   a = dense_with_bottleneck(a,5,16,24)
+
+  a = Dropout(0.3)(a)
 
   a = dense_with_bottleneck(a,3,False,12)
   a = dense_with_bottleneck(a,3,False,12)
@@ -397,8 +417,9 @@ def DeepScan(input_mat):
   a = Dropout(0.5)(a)
 
   a = Conv2D(200,kernel_size = (1,1) , activation = 'elu')(a)
+  a = BatchNormalization()(a)
   a = Conv2D(50,kernel_size = (1,1) , activation = 'elu')(a)
-
+  a = BatchNormalization()(a)
   a = Conv2D(5,kernel_size = (1,1) , activation = 'sigmoid')(a)
 
   model = Model(inputs = input_mat , outputs = a)
