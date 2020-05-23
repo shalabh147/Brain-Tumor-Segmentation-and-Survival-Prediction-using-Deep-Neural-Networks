@@ -1,3 +1,6 @@
+#this file is for training (240,155) slices
+
+
 import random
 import pandas as pd
 import numpy as np
@@ -32,38 +35,19 @@ from skimage.transform import resize
 from medpy.io import load
 import numpy as np
 
-import cv2
-from utils import f1_score,dice_coef_loss,dice_coef,one_hot_encode
+#import cv2
+from ../utils import f1_score,dice_coef_loss,dice_coef,one_hot_encode
 
-'''
-checkpoint = ModelCheckpoint('new/weights.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+model_train = load_model('../Models/survival_pred_240_155_2.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
 
-#csv_logger = CSVLogger('./log.out', append=True, separator=';')
-
-earlystopping = EarlyStopping(monitor = 'val_loss', verbose = 1,min_delta = 0.0007, patience = 4, mode = 'min')
-
-callbacks_list = [checkpoint, earlystopping]
-'''
-model_train = load_model('Models/survival_pred_240_240.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
-learning_rate = 1e-6
-epochs = 10
-decay_rate = learning_rate / epochs
-momentum = 0.8
-model_train.compile(optimizer=Adam(lr=learning_rate,decay = decay_rate), loss=dice_coef_loss, metrics=[f1_score])
 # data preprocessing starts here
-path = '../Brats17TrainingData/HGG'
+path = '../../Brats17TrainingData/LGG'
 all_images = os.listdir(path)
 #print(len(all_images))
 all_images.sort()
-
-
-
-Y = np.zeros((240,240))
-X = np.zeros((240,240,4))
 data = np.zeros((240,240,155,4))
-#data2 = np.zeros((240,240,155,5))
 
-for i in range(105,110):
+for i in range(10,20):
   print(i)
   x_to = []
   y_to = []
@@ -79,11 +63,9 @@ for i in range(105,110):
     image_path = folder_path + '/' + modalities[j]
     if(image_path[-7:-1] + image_path[-1] == 'seg.nii'):
       image_data2, image_header2 = load(image_path);
-      print(np.unique(image_data2))
       print("Entered ground truth")
     else:
       image_data, image_header = load(image_path);
-      
       data[:,:,:,w] = image_data
       print("Entered modality")
       w = w+1
@@ -92,20 +74,20 @@ for i in range(105,110):
   print(image_data2.shape)  
 
     
-  for slice_no in range(0,155):
+  for slice_no in range(0,240):
     a = slice_no
-    X = data[:,:,slice_no,:]
+    X = data[slice_no,:,:,:]
 
-    Y = image_data2[:,:,slice_no]
+    Y = image_data2[slice_no,:,:]
 
-    if(X.any()!=0 and Y.any()!=0 ):
+    if(X.any()!=0 and Y.any()!=0 and len(np.unique(Y))==4):
       #print(slice_no)
       x_to.append(X)
       y_to.append(Y)    
       
 
-  #if len(x_to) <= 24:
-  #  continue;
+  if len(x_to) <= 27:
+  	continue;
 
   x_to = np.asarray(x_to)
   y_to = np.asarray(y_to)
@@ -113,22 +95,22 @@ for i in range(105,110):
   print(y_to.shape)
 
   
-  y_to[y_to==4] = 3
+  y_to[y_to==4] = 3         #since label 4 was missing in Brats dataset , changing all labels 4 to 3.
   hello = y_to.flatten()
   #print(hello[hello==3].shape)
- # print("Number of classes",np.unique(hello))
- # class_weights = class_weight.compute_class_weight('balanced',np.unique(hello),hello)
+  print("Number of classes",np.unique(hello))
+  class_weights = class_weight.compute_class_weight('balanced',np.unique(hello),hello)
   
   #class_weights.insert(3,0)
-  #print("class_weights",class_weights)
+  print("class_weights",class_weights)
   y_to = one_hot_encode(y_to)
   print(y_to.shape)
 
 
   
 
-  model_train.fit(x=x_to, y=y_to, batch_size=8, epochs=5)
+  model_train.fit(x=x_to, y=y_to, batch_size=9, epochs=4,class_weight = class_weights)
 
 
 
-model_train.save('survival_pred_240_240.h5')
+model_train.save('../Models/survival_pred_240_155_2.h5')

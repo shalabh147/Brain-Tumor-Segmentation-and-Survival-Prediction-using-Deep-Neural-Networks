@@ -26,17 +26,17 @@ from skimage.transform import resize
 from medpy.io import load
 from medpy.io import save
 import numpy as np
-import cv2
+#import cv2
 
-from utils import f1_score,dice_coef,dice_coef_loss
+from ../utils import f1_score,dice_coef,dice_coef_loss
 def reverse_encode(a):
 	return np.argmax(a,axis=-1)
 
 
 
-model_to_predict1 = load_model('Models/survival_pred_240_240.h5',custom_objects={'dice_coef_loss':dice_coef_loss})
-model_to_predict2 = load_model('Models/survival_pred_240_155_1.h5')
-model_to_predict3 = load_model('Models/survival_pred_240_155_2.h5')
+model_to_predict1 = load_model('../Models/survival_pred_240_240.h5',custom_objects={'dice_coef_loss':dice_coef_loss})
+model_to_predict2 = load_model('../Models/survival_pred_240_155_1.h5')
+model_to_predict3 = load_model('../Models/survival_pred_240_155_2.h5')
 path = '../TestData'
 all_images = os.listdir(path)
 #print(len(all_images))
@@ -69,32 +69,32 @@ for i in range(100,101):
       w = w+1
     
   print(data.shape)
-  #print(image_data2.shape)  
-
+    
+  #Combining results from all 3 dimensions
     
   for slice_no in range(0,240):
     a = slice_no
     X = data[slice_no,:,:,:]
-	X = X.reshape(1,240,155,4)
-	Y_hat = model_to_predict3.predict(X)
-	new_image[a,:,:,:] = Y_hat[0,:,:,:]
+    X = X.reshape(1,240,155,4)
+    Y_hat = model_to_predict3.predict(X)
+    new_image[a,:,:,:] = Y_hat[0,:,:,:]
 
   for slice_no in range(0,155):
     a = slice_no
     X = data[:,:slice_no,:]
-	X = X.reshape(1,240,240,4)
-	Y_hat = model_to_predict1.predict(X)
-	new_image[:,:,slice_no,:] += Y_hat[0,:,:,:]
+    X = X.reshape(1,240,240,4)
+    Y_hat = model_to_predict1.predict(X)
+    new_image[:,:,slice_no,:] += Y_hat[0,:,:,:]
 
   for slice_no in range(0,240):
     a = slice_no
     X = data[:,slice_no,:,:]
-	X = X.reshape(1,240,155,4)
-	Y_hat = model_to_predict2.predict(X)
-	new_image[:,a,:,:] += Y_hat[0,:,:,:]
+    X = X.reshape(1,240,155,4)
+    Y_hat = model_to_predict2.predict(X)
+    new_image[:,a,:,:] += Y_hat[0,:,:,:]
       
 
-  new_image = new_image/3
+  new_image = new_image/3         #average of probabilities from 3 directions
   
 
   name = '../all_images/VSD.Seg_001.'+ image_id + '.mha'

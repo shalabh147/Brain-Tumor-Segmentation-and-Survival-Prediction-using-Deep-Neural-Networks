@@ -1,3 +1,5 @@
+#this file was to evaluate the trained model on validation set.
+
 import random
 import pandas as pd
 import numpy as np
@@ -6,7 +8,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import keras.backend as K
 
-from keras import metrics
+
 from keras.models import Model, load_model
 from keras.layers import Input, BatchNormalization, Activation, Dense, Dropout,Maximum
 from keras.layers.core import Lambda, RepeatVector, Reshape
@@ -19,12 +21,6 @@ from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_a
 
 from skimage.io import imread, imshow, concatenate_images
 from skimage.transform import resize
-from sklearn.utils import class_weight
-from models import Unet_with_slice
-
-from keras.callbacks import ModelCheckpoint
-from keras.callbacks import CSVLogger
-from keras.callbacks import EarlyStopping
 
 import os
 from skimage.io import imread, imshow, concatenate_images
@@ -32,19 +28,22 @@ from skimage.transform import resize
 from medpy.io import load
 import numpy as np
 
-import cv2
-from utils import f1_score,dice_coef_loss,dice_coef,one_hot_encode
+#import cv2
+from sklearn import metrics
+#from main import one_hot_encode
 
-model_train = load_model('Models/survival_pred_240_155_2.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
+from ../utils import one_hot_encode,dice_coef_loss,dice_coef,f1_score
+
+model_predict = load_model('../Models/survival_pred_240_155_1.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
 
 # data preprocessing starts here
-path = '../Brats17TrainingData/LGG'
+path = '../../Brats17TrainingData/HGG'
 all_images = os.listdir(path)
 #print(len(all_images))
 all_images.sort()
 data = np.zeros((240,240,155,4))
 
-for i in range(10,20):
+for i in range(100,101):
   print(i)
   x_to = []
   y_to = []
@@ -83,31 +82,61 @@ for i in range(10,20):
       y_to.append(Y)    
       
 
-  if len(x_to) <= 27:
-  	continue;
-
   x_to = np.asarray(x_to)
   y_to = np.asarray(y_to)
   print(x_to.shape)
   print(y_to.shape)
 
   
-  y_to[y_to==4] = 3         #since label 4 was missing in Brats dataset , changing all labels 4 to 3.
-  hello = y_to.flatten()
-  #print(hello[hello==3].shape)
-  print("Number of classes",np.unique(hello))
-  class_weights = class_weight.compute_class_weight('balanced',np.unique(hello),hello)
-  
-  #class_weights.insert(3,0)
-  print("class_weights",class_weights)
-  y_to = one_hot_encode(y_to)
-  print(y_to.shape)
+  y_to[y_to==4] = 3
 
 
-  
+  print("Number of classes",np.unique(y_to))
 
-  model_train.fit(x=x_to, y=y_to, batch_size=9, epochs=4,class_weight = class_weights)
+  pred = model_predict.predict(x=x_to)
+  pred = np.around(pred)
+  print(pred.shape)
+  #pred = np.around(pred)
 
+  #y_to = one_hot_encode(y_to)
 
+  '''
+  pred = pred.reshape(-1,5)
+  #print(pred1[1000:1100][:])
+  #print(y_to)
 
-model_train.save('Models/survival_pred_240_155_2.h5')
+  pred1 = np.argmax(pred[:,1:5],axis=1)
+  pred1 = pred1 + 1
+  y2 = y_to.reshape(-1)
+  #print(y2[100000:100100])
+
+  print(y2.shape)
+  print(pred1.shape)
+
+  pred1[pred[:,0]>0.97] = 0
+'''
+
+  pred1 = np.argmax(pred.reshape(-1,4),axis = 1)
+  y2 = y_to.reshape(-1)
+  f1 = metrics.f1_score(y2,pred1,average='macro') 
+
+  print(f1)
+ # print(pred1[y2==2])
+  print("Originally 0" , y2[y2==0].shape)
+  print("Predicted 0" , pred1[pred1==0].shape)
+
+  print("Originally 1" , y2[y2==1].shape)
+  print("Predicted 1" , pred1[pred1==1].shape)
+
+  print("Originally 2" , y2[y2==2].shape)
+  print("Predicted 2" , pred1[pred1==2].shape)
+
+  print("Originally 3" , y2[y2==3].shape)
+  print("Predicted 3" , pred1[pred1==3].shape)
+
+  #print("Originally 4" , y2[y2==4].shape)
+  #print("Predicted 4" , pred1[pred1==4].shape)
+
+ # f1 = metrics.f1_score(y2,pred1,average='macro')
+  #print(f1)
+

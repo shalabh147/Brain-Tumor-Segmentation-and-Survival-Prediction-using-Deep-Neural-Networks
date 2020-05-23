@@ -1,5 +1,5 @@
-#import random
-#import pandas as pd
+import random
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 #%matplotlib inline
@@ -15,31 +15,29 @@ from keras.layers.pooling import MaxPooling2D, GlobalMaxPool2D,MaxPooling3D
 from keras.layers.merge import concatenate, add
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from keras.optimizers import Adam
-#from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
+from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 
 from skimage.io import imread, imshow, concatenate_images
 from skimage.transform import resize
 
 import os
-#from skimage.io import imread, imshow, concatenate_images
-#from skimage.transform import resize
+from skimage.io import imread, imshow, concatenate_images
+from skimage.transform import resize
+import medpy
 from medpy.io import load
 import numpy as np
 
-#import cv2
+import cv2
 from sklearn import metrics
 from sklearn_extra.cluster import KMedoids
 
-from models import survival_model
-
+from ../models import survival_model
+from joblib import load
 import csv
 import pickle
 
-from joblib import dump
-
 age_dict = {}
 days_dict = {}
-
 
 def encode(truth):
 	#print(truth)
@@ -51,7 +49,6 @@ def encode(truth):
 		return 2
 	else:
 		return 3
-
 
 with open('survival_data.csv', mode='r') as csv_file:
     csv_reader = csv.reader(csv_file,delimiter = ',')
@@ -82,17 +79,20 @@ path = '../Brats17TrainingData/HGG'
 all_images = os.listdir(path)
 #print(len(all_images))
 
-model_train = survival_model()
-model_train.compile(optimizer=Adam(),loss='mean_squared_logarithmic_error')
+#model_train = survival_model()
+#model_train.compile(optimizer=Adam(),loss='mean_squared_error',metrics=['mean_squared_error'])
+import xgboost as xgb
+#xg_reg = xgb.XGBRegressor(objective ='reg:linear', colsample_bytree = 0.3, learning_rate = 0.1, max_depth = 5, alpha = 10)
+xgboost_loaded_model = pickle.load(open("../pima.pickle.dat", "rb"))
+svm_loaded = load('../SVMfit.joblib')
+loaded2 = load_model('../Models/dense_survival_classifier.h5')
 
-#import xgboost as xgb
-#xg_reg = xgb.XGBRegressor(objective ='reg:squarederror', colsample_bytree = 0.3, learning_rate = 0.01, max_depth = 5, alpha = 10)
-#early_stopping_monitor = EarlyStopping(patience=3)
 
 to_train = []
 ground_truth = []
 data = np.zeros((240,240,155,4))
-for i in range(0,174):
+for i in range(180,183):
+	
 	print(i)
 	final_image_features = []
 	x_to = []
@@ -109,10 +109,10 @@ for i in range(0,174):
 		#print(modalities[j])
 			image_path = folder_path + '/' + modalities[j]
 			if(image_path[-7:-1] + image_path[-1] == 'seg.nii'):
-			  image_data2, image_header2 = load(image_path);
+			  image_data2, image_header2 = medpy.io.load(image_path);
 			  print("Entered ground truth")
 			else:
-			  image_data, image_header = load(image_path);
+			  image_data, image_header = medpy.io.load(image_path);
 			  data[:,:,:,w] = image_data
 			  print("Entered modality")
 			  w = w+1
@@ -131,7 +131,7 @@ for i in range(0,174):
 			if(X.any()!=0 and Y.any()!=0 and len(np.unique(Y))==4):
 				#print(X.shape)
 				new_features = intermediate_layer_model.predict(X)
-				#print(slice_no)
+				print(slice_no)
 				new_features = new_features.reshape(1*5*5*128)
 				new_features = np.unique(new_features)
 
@@ -162,7 +162,7 @@ for i in range(0,174):
 		
 		reduced_features.append(age_dict[m])
 		reduced_features = np.asarray(reduced_features)	
-		#print(reduced_features)
+		print(reduced_features)
 
 		truth = days_dict[m]
 
@@ -172,7 +172,6 @@ for i in range(0,174):
 		#reduced_features = reduced_features.reshape(1,20)
 
 		to_train.append(reduced_features)
-		print("truth",truth)
 		ground_truth.append(encode(truth))
 
 		#if len(to_train) == 10:
@@ -184,26 +183,22 @@ for i in range(0,174):
 
 to_train = np.asarray(to_train)
 ground_truth = np.asarray(ground_truth)
-
 print(to_train.shape)
 print(ground_truth.shape)
 
-#xg_reg.fit(to_train,ground_truth)									#XGBoostREgressor model to try out
-#pickle.dump(xg_reg, open("pima.pickle.dat", "wb"))					#saving model to file pima.pickle.dat
+from sklearn.metrics import accuracy_score
 
-from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC
+y_pred1 = svm_loaded.predict(to_train)
+y_pred2 = loaded2.predict(to_train)
+print(y_pred1)
+print(y_pred2)
+print(ground_truth)
+predictions = [round(value) for value in y_pred1]
+# evaluate predictions
+accuracy = accuracy_score(ground_truth, predictions)
+#pickle.dump(xg_reg, open("pima.pickle.dat", "wb"))
 
-clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
-clf.fit(to_train,ground_truth)
+print("Accuracy: %.2f%%" % (accuracy * 100.0))
 
-dump(clf,'SVMfit.joblib')
-
-#X_train, X_val, y_train, y_val = train_test_split(to_train, ground_truth, test_size=0.2, random_state=1)
-#print("Training set size",X_train.shape)
-#print("Validation set size",X_val.shape)
-
-model_train.fit(x=to_train,y=ground_truth,epochs = 1500,batch_size = 15)
-model_train.save('Models/dense_survival_classifier.h5')
 
 

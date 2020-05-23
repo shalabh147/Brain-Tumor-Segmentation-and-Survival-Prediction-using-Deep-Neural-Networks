@@ -1,11 +1,14 @@
-import random
-import pandas as pd
+#this file is for training survival prediction model using features extracted from segmentation model
+
+#import random
+#import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 #%matplotlib inline
 import tensorflow as tf
 import keras.backend as K
-
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
 from keras.models import Model, load_model
 from keras.layers import Input, BatchNormalization, Activation, Dense, Dropout,Maximum
@@ -15,30 +18,43 @@ from keras.layers.pooling import MaxPooling2D, GlobalMaxPool2D,MaxPooling3D
 from keras.layers.merge import concatenate, add
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from keras.optimizers import Adam
-from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
+#from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 
 from skimage.io import imread, imshow, concatenate_images
 from skimage.transform import resize
 
 import os
-from skimage.io import imread, imshow, concatenate_images
-from skimage.transform import resize
+
 from medpy.io import load
 import numpy as np
 
-import cv2
 from sklearn import metrics
 from sklearn_extra.cluster import KMedoids
 
-from models import survival_model
+from ../models import survival_model
 
 import csv
 import pickle
 
+from joblib import dump
+
 age_dict = {}
 days_dict = {}
 
-with open('survival_data.csv', mode='r') as csv_file:
+
+def encode(truth):
+	#print(truth)
+	truth = int(truth)
+
+	if(truth < 300):
+		return 1
+	elif(truth >= 300 and truth <= 450):
+		return 2
+	else:
+		return 3
+
+
+with open('../survival_data.csv', mode='r') as csv_file:
     csv_reader = csv.reader(csv_file,delimiter = ',')
     line_count = 0
     for row in csv_reader:
@@ -56,31 +72,28 @@ with open('survival_data.csv', mode='r') as csv_file:
 
     print(f'Processed {line_count} lines.')
 
-from utils import one_hot_encode,dice_coef_loss,dice_coef,f1_score
+from ../utils import one_hot_encode,dice_coef_loss,dice_coef,f1_score
 
-base_model = load_model('Models/survival_pred.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
+base_model = load_model('../Models/survival_pred.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'f1_score':f1_score})
 layer_name = 'dropout_4'
 
 intermediate_layer_model = Model(inputs=base_model.get_layer('input_1').input,outputs=base_model.get_layer(layer_name).output)
 
-path = '../Brats17TrainingData/HGG'
+path = '../../Brats17TrainingData/HGG'
 all_images = os.listdir(path)
 #print(len(all_images))
 
-#model_train = survival_model()
-#model_train.compile(optimizer=Adam(),loss='mean_squared_error',metrics=['mean_squared_error'])
-import xgboost as xgb
-#xg_reg = xgb.XGBRegressor(objective ='reg:linear', colsample_bytree = 0.3, learning_rate = 0.1, max_depth = 5, alpha = 10)
-loaded_model = pickle.load(open("pima.pickle.dat", "rb"))
+model_train = survival_model()
+model_train.compile(optimizer=Adam(),loss='mean_squared_logarithmic_error')
 
-loaded2 = load_model('Models/dense_prediction.h5')
-
+#import xgboost as xgb
+#xg_reg = xgb.XGBRegressor(objective ='reg:squarederror', colsample_bytree = 0.3, learning_rate = 0.01, max_depth = 5, alpha = 10)
+#early_stopping_monitor = EarlyStopping(patience=3)
 
 to_train = []
 ground_truth = []
 data = np.zeros((240,240,155,4))
-for i in range(180,185):
-	
+for i in range(0,174):
 	print(i)
 	final_image_features = []
 	x_to = []
@@ -119,7 +132,7 @@ for i in range(180,185):
 			if(X.any()!=0 and Y.any()!=0 and len(np.unique(Y))==4):
 				#print(X.shape)
 				new_features = intermediate_layer_model.predict(X)
-				print(slice_no)
+				#print(slice_no)
 				new_features = new_features.reshape(1*5*5*128)
 				new_features = np.unique(new_features)
 
@@ -150,43 +163,34 @@ for i in range(180,185):
 		
 		reduced_features.append(age_dict[m])
 		reduced_features = np.asarray(reduced_features)	
-		print(reduced_features)
 
 		truth = days_dict[m]
 
-		#ground_truth = np.zeros(1)
-		#ground_truth[0] = truth
-
-		#reduced_features = reduced_features.reshape(1,20)
 
 		to_train.append(reduced_features)
-		ground_truth.append(truth)
+		print("truth",truth)
+		ground_truth.append(encode(truth))
 
-		#if len(to_train) == 10:
-		#	to_train = np.asarray(to_train)
-		#	ground_truth = np.asarray(ground_truth)
-		#	model_train.fit(x=to_train,y=ground_truth,batch_size = 2,epochs = 20)
-		#	to_train = []
-		#	ground_truth = []
 
 to_train = np.asarray(to_train)
 ground_truth = np.asarray(ground_truth)
+
 print(to_train.shape)
 print(ground_truth.shape)
 
-from sklearn.metrics import accuracy_score
+#xg_reg.fit(to_train,ground_truth)									#An XGBoostREgressor model to try out
+#pickle.dump(xg_reg, open("pima.pickle.dat", "wb"))					#saving model to file pima.pickle.dat
 
-y_pred1 = loaded_model.predict(to_train)
-y_pred2 = loaded2.predict(to_train)
-print(y_pred1)
-print(y_pred2)
-print(ground_truth)
-predictions = [round(value) for value in y_pred1]
-# evaluate predictions
-accuracy = accuracy_score(ground_truth, predictions)
-#pickle.dump(xg_reg, open("pima.pickle.dat", "wb"))
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
 
-print("Accuracy: %.2f%%" % (accuracy * 100.0))
+clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))			#An SVM classifier to classify into 3 categories
+clf.fit(to_train,ground_truth)
 
+dump(clf,'SVMfit.joblib')											#Saving model to file SVMfit.joblib
+
+
+model_train.fit(x=to_train,y=ground_truth,epochs = 1500,batch_size = 15)
+model_train.save('Models/dense_survival_classifier.h5')				#A neural networks based dense regression model
 
 
