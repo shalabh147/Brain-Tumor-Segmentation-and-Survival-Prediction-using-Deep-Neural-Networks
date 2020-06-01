@@ -317,7 +317,7 @@ def survival_model():
   model = Sequential()
   model.add(Dense(32,input_shape=(20,),kernel_regularizer=keras.regularizers.l1(0.4) , activation='relu'))
   model.add(Dense(10,activation = 'relu'))
-  model.add(Dense(1,activation = 'linear'))
+  model.add(Dense(1,activation = 'sigmoid'))
 
   return model
 
