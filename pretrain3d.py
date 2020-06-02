@@ -103,7 +103,7 @@ ground_truth = []
 data = np.zeros((4,128,128,128))
 
 
-for i in range(0,2):
+for i in range(0,150):
     print(i)
     survival_features = []
     x_to = []
