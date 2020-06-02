@@ -19,190 +19,187 @@ from keras.layers.merge import concatenate
 from keras.optimizers import Adam
 from keras.utils import to_categorical
 from tensorflow.compat.v1.logging import INFO, set_verbosity
+from keras.models import load_model
+import csv
+from keras_contrib.layers.normalization.instancenormalization import InstanceNormalization
+import os
 
+from sklearn_extra.cluster import KMedoids
+import pandas as pd
+from lifelines import CoxPHFitter
+#from pickle import dumps,loads
+from joblib import load
 set_verbosity(INFO)
-
+cph_new = load('cox.joblib')
 K.set_image_data_format("channels_first")
 
+age_dict = {}
+days_dict = {}
+from joblib import dump
+from medpy.io import load
+with open('survival_data.csv', mode='r') as csv_file:
+    csv_reader = csv.reader(csv_file,delimiter = ',')
+    line_count = 0
+    for row in csv_reader:
+        if line_count == 0:
+            print(f'Column names are {", ".join(row)}')
+            line_count += 1
+        else:
+            print(row)
+            key = row[0]
+            age = row[1]
+            days = row[2]
+            age_dict[key] = age
+            days_dict[key] = days
+            line_count+=1
 
-def soft_dice_loss(y_true, y_pred, axis=(1, 2, 3), 
-                   epsilon=0.00001):
+    print(f'Processed {line_count} lines.')
+
+
+def dice_coefficient(y_true, y_pred, smooth=1.):
+    y_true_f = K.flatten(y_true)
+    y_pred_f = K.flatten(y_pred)
+    intersection = K.sum(y_true_f * y_pred_f)
+    return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
+
+
+def dice_coefficient_loss(y_true, y_pred):
+    return -dice_coefficient(y_true, y_pred)
+
+
+def weighted_dice_coefficient(y_true, y_pred, axis=(-3, -2, -1), smooth=0.00001):
     """
-    Compute mean soft dice loss over all abnormality classes.
-
-    Args:
-        y_true (Tensorflow tensor): tensor of ground truth values for all classes.
-                                    shape: (num_classes, x_dim, y_dim, z_dim)
-        y_pred (Tensorflow tensor): tensor of soft predictions for all classes.
-                                    shape: (num_classes, x_dim, y_dim, z_dim)
-        axis (tuple): spatial axes to sum over when computing numerator and
-                      denominator in formula for dice loss.
-                      Hint: pass this as the 'axis' argument to the K.sum
-                            and K.mean functions.
-        epsilon (float): small constant added to numerator and denominator to
-                        avoid divide by 0 errors.
-    Returns:
-        dice_loss (float): computed value of dice loss.     
-    """
-
-    ### START CODE HERE (REPLACE INSTANCES OF 'None' with your code) ###
-
-    dice_numerator = 2. * K.sum(y_true * y_pred, axis=axis) + epsilon
-    dice_denominator = K.sum(y_true*y_true, axis=axis) + K.sum(y_pred*y_pred, axis=axis) + epsilon
-    dice_loss = 1 - K.mean((dice_numerator)/(dice_denominator))
-
-    ### END CODE HERE ###
-
-    return dice_loss
-
-
-def dice_coefficient(y_true, y_pred, axis=(1, 2, 3), 
-                     epsilon=0.00001):
-    """
-    Compute mean dice coefficient over all abnormality classes.
-
-    Args:
-        y_true (Tensorflow tensor): tensor of ground truth values for all classes.
-                                    shape: (num_classes, x_dim, y_dim, z_dim)
-        y_pred (Tensorflow tensor): tensor of predictions for all classes.
-                                    shape: (num_classes, x_dim, y_dim, z_dim)
-        axis (tuple): spatial axes to sum over when computing numerator and
-                      denominator of dice coefficient.
-                      Hint: pass this as the 'axis' argument to the K.sum
-                            and K.mean functions.
-        epsilon (float): small constant add to numerator and denominator to
-                        avoid divide by 0 errors.
-    Returns:
-        dice_coefficient (float): computed value of dice coefficient.     
-    """
-
-    ### START CODE HERE (REPLACE INSTANCES OF 'None' with your code) ###
-    
-    dice_numerator = 2. * K.sum(y_true * y_pred, axis=axis) + epsilon
-    dice_denominator = K.sum(y_true, axis=axis) + K.sum(y_pred, axis=axis) + epsilon
-    dice_coefficient = K.mean((dice_numerator)/(dice_denominator))
-    
-    ### END CODE HERE ###
-
-    return dice_coefficient
-
-
-
-def create_convolution_block(input_layer, n_filters, batch_normalization=False,
-                             kernel=(3, 3, 3), activation=None,
-                             padding='same', strides=(1, 1, 1),
-                             instance_normalization=False):
-    """
-    :param strides:
-    :param input_layer:
-    :param n_filters:
-    :param batch_normalization:
-    :param kernel:
-    :param activation: Keras activation layer to use. (default is 'relu')
-    :param padding:
+    Weighted dice coefficient. Default axis assumes a "channels first" data structure
+    :param smooth:
+    :param y_true:
+    :param y_pred:
+    :param axis:
     :return:
     """
-    layer = Conv3D(n_filters, kernel, padding=padding, strides=strides)(
-        input_layer)
-    if activation is None:
-        return Activation('relu')(layer)
-    else:
-        return activation()(layer)
+    return K.mean(2. * (K.sum(y_true * y_pred,
+                              axis=axis) + smooth/2)/(K.sum(y_true,
+                                                            axis=axis) + K.sum(y_pred,
+                                                                               axis=axis) + smooth))
 
 
-def get_up_convolution(n_filters, pool_size, kernel_size=(2, 2, 2),
-                       strides=(2, 2, 2),
-                       deconvolution=False):
-    if deconvolution:
-        return Deconvolution3D(filters=n_filters, kernel_size=kernel_size,
-                               strides=strides)
-    else:
-        return UpSampling3D(size=pool_size)
+def weighted_dice_coefficient_loss(y_true, y_pred):
+    return -weighted_dice_coefficient(y_true, y_pred)
 
 
-def unet_model_3d(loss_function, input_shape=(4, 160, 160, 16),
-                  pool_size=(2, 2, 2), n_labels=3,
-                  initial_learning_rate=0.00001,
-                  deconvolution=False, depth=4, n_base_filters=32,
-                  include_label_wise_dice_coefficients=False, metrics=[],
-                  batch_normalization=False, activation_name="sigmoid"):
-    """
-    Builds the 3D UNet Keras model.f
-    :param metrics: List metrics to be calculated during model training (default is dice coefficient).
-    :param include_label_wise_dice_coefficients: If True and n_labels is greater than 1, model will report the dice
-    coefficient for each label as metric.
-    :param n_base_filters: The number of filters that the first layer in the convolution network will have. Following
-    layers will contain a multiple of this number. Lowering this number will likely reduce the amount of memory required
-    to train the model.
-    :param depth: indicates the depth of the U-shape for the model. The greater the depth, the more max pooling
-    layers will be added to the model. Lowering the depth may reduce the amount of memory required for training.
-    :param input_shape: Shape of the input data (n_chanels, x_size, y_size, z_size). The x, y, and z sizes must be
-    divisible by the pool size to the power of the depth of the UNet, that is pool_size^depth.
-    :param pool_size: Pool size for the max pooling operations.
-    :param n_labels: Number of binary labels that the model is learning.
-    :param initial_learning_rate: Initial learning rate for the model. This will be decayed during training.
-    :param deconvolution: If set to True, will use transpose convolution(deconvolution) instead of up-sampling. This
-    increases the amount memory required during training.
-    :return: Untrained 3D UNet Model
-    """
-    inputs = Input(input_shape)
-    current_layer = inputs
-    levels = list()
+#model2 = load_model('tumor_segmentation_model.h5',custom_objects={'dice_coefficient_loss':dice_coefficient_loss , 'dice_coefficient':dice_coefficient})
+model3 = load_model('isensee_2017_model.h5',custom_objects={'weighted_dice_coefficient':weighted_dice_coefficient, 'weighted_dice_coefficient_loss':weighted_dice_coefficient_loss, 'InstanceNormalization':InstanceNormalization})
+#model = load_model('tumor_segmentation_weights.h5')
+#model3.summary()
 
-    print(current_layer.shape)
-    # add levels with max pooling
-    for layer_depth in range(depth):
-        layer1 = create_convolution_block(input_layer=current_layer,
-                                          n_filters=n_base_filters * (
-                                                  2 ** layer_depth),
-                                          batch_normalization=batch_normalization)
+layer_name = 'add_5'
 
-        print(layer1.shape)
-        layer2 = create_convolution_block(input_layer=layer1,
-                                          n_filters=n_base_filters * (
-                                                  2 ** layer_depth) * 2,
-                                          batch_normalization=batch_normalization)
+intermediate_layer_model = Model(inputs=model3.get_layer('input_1').input,outputs=model3.get_layer(layer_name).output)
 
-        print(layer2.shape)
-        if layer_depth < depth - 1:
-            current_layer = MaxPooling3D(pool_size=pool_size)(layer2)
-            levels.append([layer1, layer2, current_layer])
-        else:
-            current_layer = layer2
-            levels.append([layer1, layer2])
+path = '../Brats17TrainingData/HGG'
+all_images = os.listdir(path)
 
-    # add levels with up-convolution or up-sampling
-    for layer_depth in range(depth - 2, -1, -1):
-        up_convolution = get_up_convolution(pool_size=pool_size,
-                                            deconvolution=deconvolution,
-                                            n_filters=
-                                            current_layer._keras_shape[1])(
-            current_layer)
-        concat = concatenate([up_convolution, levels[layer_depth][1]], axis=1)
-        current_layer = create_convolution_block(
-            n_filters=levels[layer_depth][1]._keras_shape[1],
-            input_layer=concat, batch_normalization=batch_normalization)
-        current_layer = create_convolution_block(
-            n_filters=levels[layer_depth][1]._keras_shape[1],
-            input_layer=current_layer,
-            batch_normalization=batch_normalization)
-
-    final_convolution = Conv3D(n_labels, (1, 1, 1))(current_layer)
-    act = Activation(activation_name)(final_convolution)
-    model = Model(inputs=inputs, outputs=act)
-
-    if not isinstance(metrics, list):
-        metrics = [metrics]
-
-    model.compile(optimizer=Adam(lr=initial_learning_rate), loss=loss_function,
-                  metrics=metrics)
-    return model
+final_X = []
+ground_truth = []
+data = np.zeros((4,128,128,128))
 
 
+for i in range(0,2):
+    print(i)
+    survival_features = []
+    x_to = []
+    y_to = []
+    m = all_images[i]
+    if m in days_dict.keys():
+        print("He survived ",days_dict[m])
+        folder_path = path + '/' + m;
+        modalities = os.listdir(folder_path)
+        modalities.sort()
+        #data = []
+        w = 0
+        for j in range(len(modalities)-1):
+        #print(modalities[j])
+            image_path = folder_path + '/' + modalities[j]
+            if(image_path[-7:-1] + image_path[-1] == 'seg.nii'):
+              image_data2, image_header2 = load(image_path);
+              print("Entered ground truth")
+            else:
+              image_data, image_header = load(image_path);
+              data[w,:,:,:] = image_data[40:168,40:168,10:138]
+              print("Entered modality")
+              w = w+1
+
+        print(data.shape)
+        #print(image_data2.shape)  
+        data2 = data.reshape(1,4,128,128,128)
+        features = intermediate_layer_model.predict(data2)
+        print(features.shape)
+
+        features = features.reshape((1*256*8*8*8))
+        features = features[0:256*8*8*8:8]
+        features = np.unique(features)
+        print(features.shape)
+        image_features = np.zeros((features.shape[0],2))
+        for x in range(len(features)):
+            image_features[x,0] = features[x]
+
+        kmedoids = KMedoids(n_clusters = 19,random_state=0).fit(image_features)
+
+        for x in kmedoids.cluster_centers_:
+            survival_features.append(x[0])
+
+        survival_features.append(days_dict[m])
+        #survival_features = np.asarray(survival_features)
+        #final_X.append(survival_features)
+        #ground_truth.append(days_dict[m])
+
+        survival_features.append(age_dict[m])
+        #survival_features.append(1)
+
+        final_X.append(survival_features)
+        '''
+        reduced_features = []
+        #final_image_features = np.asarray(final_image_features)
+        #final_image_features = np.unique(final_image_features)
+        image_features = np.zeros((final_image_features.shape[0],2))
+        for x in range(len(final_image_features)):
+            image_features[x,0] = new_features[x]
+
+        kmedoids = KMedoids(n_clusters=19, random_state=0).fit(image_features)
+
+        for x in kmedoids.cluster_centers_:
+            reduced_features.append(x[0])
+
+        
+        reduced_features.append(age_dict[m])
+        reduced_features = np.asarray(reduced_features) 
+
+        truth = days_dict[m]
 
 
+        to_train.append(reduced_features)
+        print("truth",truth)
+        ground_truth.append(encode(truth))
+'''
+final_X = np.asarray(final_X)
+columns = ["column1","column2","column3","column4","column5","column6","column7","column8","column9","column10","column11","column12","column13","column14","column15","column16","column17","column18","column19","T","Age"]
+df =  pd.DataFrame(data=final_X, columns=columns)
+print(df)
 
+cph = CoxPHFitter(penalizer = 0.1)
+cph.fit(df,duration_col = 'T')
+cph.print_summary()
 
-model = unet_model_3d(loss_function=soft_dice_loss, metrics=[dice_coefficient])
-model.load_weights("model_pretrained.hdf5")
-model.summary()
+dump(cph,'cox.joblib')
+#cph_new = loads(s_cph)
+
+#ground_truth = np.asarray(ground_truth)
+#print(final_X.shape)
+#print(ground_truth.shape)
+
+'''
+to_train = np.asarray(to_train)
+ground_truth = np.asarray(ground_truth)
+
+print(to_train.shape)
+print(ground_truth.shape)
+'''
