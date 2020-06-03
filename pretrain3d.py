@@ -56,6 +56,7 @@ with open('survival_data.csv', mode='r') as csv_file:
     print(f'Processed {line_count} lines.')
 
 
+
 def dice_coefficient(y_true, y_pred, smooth=1.):
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
@@ -84,6 +85,24 @@ def weighted_dice_coefficient(y_true, y_pred, axis=(-3, -2, -1), smooth=0.00001)
 
 def weighted_dice_coefficient_loss(y_true, y_pred):
     return -weighted_dice_coefficient(y_true, y_pred)
+'''
+def survival_loss(y_true,y_pred):
+    sum = 0
+    print(y_true.shape[0])
+    for i in range(2):
+
+        all_greater = y_pred[y_true>y_true[i][0]]
+        print(all_greater)
+        if(len(all_greater)):
+            sum += y_pred[i][0] - K.eval(K.log(K.sum(K.exp(all_greater))))
+        print(sum)
+    #print(K.eval(sum))
+    return sum  
+
+hello1 = np.random.rand(10,1)
+hello2 = np.random.rand(10,1)
+survival_loss(hello1,hello2)
+'''  
 
 
 #model2 = load_model('tumor_segmentation_model.h5',custom_objects={'dice_coefficient_loss':dice_coefficient_loss , 'dice_coefficient':dice_coefficient})
@@ -99,13 +118,15 @@ path = '../Brats17TrainingData/HGG'
 all_images = os.listdir(path)
 
 final_X = []
+final_X_2 = []
 ground_truth = []
 data = np.zeros((4,128,128,128))
 
 
-for i in range(0,150):
+for i in range(0,2):
     print(i)
     survival_features = []
+    model_data = []
     x_to = []
     y_to = []
     m = all_images[i]
@@ -147,6 +168,10 @@ for i in range(0,150):
         for x in kmedoids.cluster_centers_:
             survival_features.append(x[0])
 
+        model_data = survival_features
+        model_data.append(age_dict[m])
+        ground_truth.append(days_dict[m])
+
         survival_features.append(days_dict[m])
         #survival_features = np.asarray(survival_features)
         #final_X.append(survival_features)
@@ -156,30 +181,11 @@ for i in range(0,150):
         #survival_features.append(1)
 
         final_X.append(survival_features)
+        final_X_2.append(model_data)
         '''
-        reduced_features = []
-        #final_image_features = np.asarray(final_image_features)
-        #final_image_features = np.unique(final_image_features)
-        image_features = np.zeros((final_image_features.shape[0],2))
-        for x in range(len(final_image_features)):
-            image_features[x,0] = new_features[x]
-
-        kmedoids = KMedoids(n_clusters=19, random_state=0).fit(image_features)
-
-        for x in kmedoids.cluster_centers_:
-            reduced_features.append(x[0])
-
         
-        reduced_features.append(age_dict[m])
-        reduced_features = np.asarray(reduced_features) 
-
-        truth = days_dict[m]
-
-
-        to_train.append(reduced_features)
-        print("truth",truth)
-        ground_truth.append(encode(truth))
 '''
+
 final_X = np.asarray(final_X)
 columns = ["column1","column2","column3","column4","column5","column6","column7","column8","column9","column10","column11","column12","column13","column14","column15","column16","column17","column18","column19","T","Age"]
 df =  pd.DataFrame(data=final_X, columns=columns)
@@ -190,12 +196,25 @@ cph.fit(df,duration_col = 'T')
 cph.print_summary()
 
 dump(cph,'cox.joblib')
+'''
+
+final_X_2 = np.asarray(final_X_2)
+ground_truth = np.asarray(ground_truth)
+
+from models import survival_model
+
+nn_model = survival_model()
+nn_model.compile(Adam(),loss=survival_loss)
+y = nn_model(final_X_2)
+print(y.shape)
+print(final_X_2.shape)
+nn_model.fit(x=final_X_2,y=ground_truth)
 #cph_new = loads(s_cph)
 
 #ground_truth = np.asarray(ground_truth)
 #print(final_X.shape)
 #print(ground_truth.shape)
-
+'''
 '''
 to_train = np.asarray(to_train)
 ground_truth = np.asarray(ground_truth)
