@@ -130,7 +130,6 @@ def compute_class_sens_spec(pred, label, class_num):
     tn = np.sum((class_pred == 0) & (class_label == 1))
     fp = np.sum((class_pred == 1) & (class_label == 0))
     fn = np.sum((class_pred == 0) & (class_label == 0))
-    print(tp,tn,fp,fn)
 
     # compute sensitivity and specificity
     sensitivity = tp / (tp + fn)

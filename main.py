@@ -34,7 +34,7 @@ import numpy as np
 
 import cv2
 
-from utils import dice_coef_loss,dice_coef,f1_score,one_hot_encode
+from utils import dice_coef_loss,dice_coef,one_hot_encode,standardize
 
 #checkpoint = ModelCheckpoint('new/weights.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 #earlystopping = EarlyStopping(monitor = 'val_loss', verbose = 1,min_delta = 0.01, patience = 3, mode = 'min')
@@ -42,10 +42,10 @@ from utils import dice_coef_loss,dice_coef,f1_score,one_hot_encode
 
 input_img = Input((240, 155, 4))
 model = Unet_with_inception(input_img,16,0.1,True)
-learning_rate = 1e-5
-epochs = 100
+learning_rate = 0.0000999
+epochs = 5000
 decay_rate = learning_rate / epochs
-model.compile(optimizer=Adam(lr=learning_rate, decay = decay_rate), loss=dice_coef_loss, metrics=[f1_score])
+model.compile(optimizer=Adam(lr=learning_rate, decay = decay_rate), loss=dice_coef_loss, metrics=[dice_coef])
 model.summary()
 
 
@@ -58,11 +58,12 @@ all_images = os.listdir(path)
 #print(len(all_images))
 all_images.sort()
 data = np.zeros((240,240,155,4))
+x_to = []
+y_to = []
 
-for i in range(10):
+for i in range(20):
   print(i)
-  x_to = []
-  y_to = []
+
   x = all_images[i]
   folder_path = path + '/' + x;
   modalities = os.listdir(folder_path)
@@ -78,6 +79,7 @@ for i in range(10):
       print("Entered ground truth")
     else:
       image_data, image_header = load(image_path);
+      image_data = standardize(image_data)
       data[:,:,:,w] = image_data
       print("Entered modality")
       w = w+1
@@ -92,35 +94,36 @@ for i in range(10):
 
     Y = image_data2[slice_no,:,:]
 
-    if(X.any()!=0 and Y.any()!=0 and len(np.unique(Y))==4):
+    if(X.any()!=0 and Y.any()!=0 and len(np.unique(Y)) == 4):
       #print(slice_no)
       x_to.append(X)
       y_to.append(Y)    
       
 
-  x_to = np.asarray(x_to)
-  y_to = np.asarray(y_to)
-  print(x_to.shape)
-  print(y_to.shape)
-
   
-  y_to[y_to==4] = 3         #since label 4 was missing in Brats dataset , changing all labels 4 to 3.
-  hello = y_to.flatten()
+  #hello = y_to.flatten()
   #print(hello[hello==3].shape)
-  print("Number of classes",np.unique(hello))
-  class_weights = class_weight.compute_class_weight('balanced',np.unique(hello),hello)
+  #print("Number of classes",np.unique(hello))
+  #class_weights = class_weight.compute_class_weight('balanced',np.unique(hello),hello)
   
   #class_weights.insert(3,0)
-  print("class_weights",class_weights)
-  y_to = one_hot_encode(y_to)
-  print(y_to.shape)
+  #print("class_weights",class_weights)
+x_to = np.asarray(x_to)
+y_to = np.asarray(y_to)
+print(x_to.shape)
+print(y_to.shape)
+
+  
+y_to[y_to==4] = 3         #since label 4 was missing in Brats dataset , changing all labels 4 to 3.
+y_to = one_hot_encode(y_to)
+print(y_to.shape)
 
 
   
 
-  model.fit(x=x_to, y=y_to, batch_size=10, epochs=4,class_weight = class_weights)
+model.fit(x=x_to, y=y_to, batch_size=20, epochs=80)
 
 
 
-model.save('Models/survival_pred_240_155_2.h5')
+model.save('first_240_155v2.h5')
 

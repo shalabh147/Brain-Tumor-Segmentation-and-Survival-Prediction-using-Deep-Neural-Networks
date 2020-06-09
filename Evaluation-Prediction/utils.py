@@ -126,10 +126,14 @@ def compute_class_sens_spec(pred, label, class_num):
     
     # compute true positives, false positives, 
     # true negatives, false negatives
+    print(np.sum(class_pred==1))
+    print(np.sum(class_pred==0))
+    print(np.sum(class_label==1))
+    print(np.sum(class_label==0))
     tp = np.sum((class_pred == 1) & (class_label == 1))
-    tn = np.sum((class_pred == 0) & (class_label == 1))
+    tn = np.sum((class_pred == 0) & (class_label == 0))
     fp = np.sum((class_pred == 1) & (class_label == 0))
-    fn = np.sum((class_pred == 0) & (class_label == 0))
+    fn = np.sum((class_pred == 0) & (class_label == 1))
     print(tp,tn,fp,fn)
 
     # compute sensitivity and specificity
@@ -151,6 +155,7 @@ def get_sens_spec_df(pred, label):
                  'Specificity'])
     
     for i, class_name in enumerate(patch_metrics.columns):
+        print(i)
         sens, spec = compute_class_sens_spec(pred, label, i)
         patch_metrics.loc['Sensitivity', class_name] = round(sens,4)
         patch_metrics.loc['Specificity', class_name] = round(spec,4)
