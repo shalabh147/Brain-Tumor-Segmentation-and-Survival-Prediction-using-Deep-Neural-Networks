@@ -38,7 +38,7 @@ import numpy as np
 #import cv2
 from utils import f1_score,dice_coef_loss,dice_coef,one_hot_encode,standardize
 
-model_train = load_model('../first_240_155.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'dice_coef':dice_coef})
+model_train = load_model('../first_240_155v2.h5',custom_objects={'dice_coef_loss':dice_coef_loss, 'dice_coef':dice_coef})
 
 # data preprocessing starts here
 path = '../../Brats17TrainingData/HGG'
@@ -47,10 +47,11 @@ print(len(all_images))
 all_images.sort()
 data = np.zeros((240,240,155,4))
 
-for i in range(50,70):
+x_to = []
+y_to = []
+for i in range(25,45):
   print(i)
-  x_to = []
-  y_to = []
+
   x = all_images[i]
   folder_path = path + '/' + x;
   modalities = os.listdir(folder_path)
@@ -81,7 +82,7 @@ for i in range(50,70):
 
     Y = image_data2[slice_no,:,:]
 
-    if(X.any()!=0 and Y.any()!=0 and len(np.unique(Y))>=3):
+    if(X.any()!=0 and Y.any()!=0 and len(np.unique(Y)) == 4):
       #print(slice_no)
       x_to.append(X)
       y_to.append(Y)    
@@ -90,28 +91,28 @@ for i in range(50,70):
   #if len(x_to) <= 18:
   #	continue;
 
-  x_to = np.asarray(x_to)
-  y_to = np.asarray(y_to)
-  print(x_to.shape)
-  print(y_to.shape)
-
-  
-  y_to[y_to==4] = 3         #since label 4 was missing in Brats dataset , changing all labels 4 to 3.
-  #hello = y_to.flatten()
-  #print(hello[hello==3].shape)
-  #print("Number of classes",np.unique(hello))
-  #class_weights = class_weight.compute_class_weight('balanced',np.unique(hello),hello)
-  
-  #class_weights.insert(3,0)
-  #print("class_weights",class_weights)
-  y_to = one_hot_encode(y_to)
-  print(y_to.shape)
+x_to = np.asarray(x_to)
+y_to = np.asarray(y_to)
+print(x_to.shape)
+print(y_to.shape)
 
 
-  
+y_to[y_to==4] = 3         #since label 4 was missing in Brats dataset , changing all labels 4 to 3.
+#hello = y_to.flatten()
+#print(hello[hello==3].shape)
+#print("Number of classes",np.unique(hello))
+#class_weights = class_weight.compute_class_weight('balanced',np.unique(hello),hello)
 
-  model_train.fit(x=x_to, y=y_to, batch_size=8, epochs=4)
+#class_weights.insert(3,0)
+#print("class_weights",class_weights)
+y_to = one_hot_encode(y_to)
+print(y_to.shape)
 
 
 
-model_train.save('../first_240_155.h5')
+
+model_train.fit(x=x_to, y=y_to, batch_size=20, epochs=30)
+
+
+
+model_train.save('../first_240_155v2.h5')

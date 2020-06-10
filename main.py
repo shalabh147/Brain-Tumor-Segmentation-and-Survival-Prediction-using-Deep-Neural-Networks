@@ -61,7 +61,7 @@ data = np.zeros((240,240,155,4))
 x_to = []
 y_to = []
 
-for i in range(20):
+for i in range(25):
   print(i)
 
   x = all_images[i]
@@ -121,7 +121,7 @@ print(y_to.shape)
 
   
 
-model.fit(x=x_to, y=y_to, batch_size=20, epochs=80)
+model.fit(x=x_to, y=y_to, batch_size=20, epochs=50)
 
 
 

@@ -38,7 +38,7 @@ def reverse_encode(a):
 
 
 
-model_to_predict1 = load_model('../first_240_155.h5',custom_objects={'dice_coef_loss':dice_coef_loss , 'dice_coef':dice_coef})
+model_to_predict1 = load_model('../first_240_155v2.h5',custom_objects={'dice_coef_loss':dice_coef_loss , 'dice_coef':dice_coef})
 #model_to_predict2 = load_model('../Models/survival_pred_240_155_1.h5',custom_objects={'dice_coef_loss':dice_coef_loss , 'f1_score':f1_score})
 #model_to_predict3 = load_model('../Models/survival_pred_240_155_2.h5',custom_objects={'dice_coef_loss':dice_coef_loss , 'f1_score':f1_score})
 path = '../../Brats17TrainingData/LGG'
@@ -48,7 +48,7 @@ all_images.sort()
 
 data = np.zeros((240,240,155,4))
 
-for i in range(40,42):
+for i in range(45,47):
   new_image = np.zeros((240,240,155,4))
   print(i)
   x_to = []
@@ -77,8 +77,10 @@ for i in range(40,42):
   Y_hat = model_to_predict1.predict(data)
   #print(Y_hat.shape)
   image_data2[image_data2==4] = 3
-  Y_hat[Y_hat > 0.6] = 1.0
-  Y_hat[Y_hat <= 0.6] = 0.0
+  #Y_hat[Y_hat > 0.6] = 1.0
+  #Y_hat[Y_hat <= 0.6] = 0.0
+  Y_hat = np.argmax(Y_hat,axis=-1)
+  Y_hat = keras.utils.to_categorical(Y_hat,num_classes=4)
   #print(Y_hat[0,100,100])
   #print(len(Y_hat[:,:,:,0]==1))
   #print(len(Y_hat[:,:,:,1]==1))
@@ -86,6 +88,7 @@ for i in range(40,42):
   #print(len(Y_hat[:,:,:,3]==1))
   image_data2 = keras.utils.to_categorical(image_data2, num_classes = 4)
   #image_data2 = one_hot_encode(image_data2)
+  print(K.eval(dice_coef_loss(Y_hat,image_data2)))
   print(get_sens_spec_df(Y_hat,image_data2))
   print(model_to_predict1.evaluate(x=data,y=image_data2)) 
   print(model_to_predict1.metrics_names)
