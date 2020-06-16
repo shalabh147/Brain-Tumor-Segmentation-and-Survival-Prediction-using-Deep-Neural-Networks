@@ -42,7 +42,7 @@ def conv_block(input_mat,num_filters,kernel_size,batch_norm):
 
 
 
-def Unet(input_img, n_filters = 16, dropout = 0.4, batch_norm = True):
+def Unet(input_img, n_filters = 16, dropout = 0.2, batch_norm = True):
 
   c1 = conv_block(input_img,n_filters,3,batch_norm)
   p1 = MaxPooling2D(pool_size=(2, 2), strides=2)(c1)
@@ -81,11 +81,49 @@ def Unet(input_img, n_filters = 16, dropout = 0.4, batch_norm = True):
   u9 = concatenate([u9,c1]);
 
   c9 = conv_block(u9,n_filters,3,batch_norm)
-  outputs = Conv2D(5, (1, 1), activation='softmax')(c9)
+  outputs = Conv2D(1, (1, 1), activation='sigmoid')(c9)
 
   model = Model(inputs=input_img, outputs=outputs)
 
   return model
+
+def UnetRes(input_img, n_filters = 32, dropout = 0.4, batch_norm = True):
+
+  c1 = conv_block(input_img,n_filters,3,batch_norm)
+  p1 = MaxPooling2D(pool_size=(2, 2), strides=2)(c1)
+  p1 = Dropout(dropout)(p1)
+  
+  c2 = conv_block(p1,n_filters*2,3,batch_norm);
+  p2 = MaxPooling2D(pool_size=(2,2) ,strides=2)(c2)
+  p2 = Dropout(dropout)(p2)
+
+  c3 = conv_block(p2,n_filters*4,3,batch_norm);
+  p3 = MaxPooling2D(pool_size=(2,2) ,strides=2)(c3)
+  p3 = Dropout(dropout)(p3)
+  
+  c5 = conv_block(p3,n_filters*8,3,batch_norm);
+
+  u7 = Conv2DTranspose(n_filters*4,(3,3),strides = (2,2) , padding= 'same')(c5);
+
+  u7 = concatenate([u7,c3]);
+  c7 = conv_block(u7,n_filters*4,3,batch_norm)
+  c7 = Dropout(dropout)(c7)
+  u8 = Conv2DTranspose(n_filters*2,(3,3),strides = (2,2) , padding='same')(c7);
+  u8 = concatenate([u8,c2]);
+
+  c8 = conv_block(u8,n_filters*2,3,batch_norm)
+  c8 = Dropout(dropout)(c8)
+  u9 = Conv2DTranspose(n_filters,(3,3),strides = (2,2) , padding='same')(c8);
+
+  u9 = concatenate([u9,c1]);
+
+  c9 = conv_block(u9,n_filters,3,batch_norm)
+  outputs = Conv2D(4, (1, 1), activation='softmax')(c9)
+
+  model = Model(inputs=input_img, outputs=outputs)
+
+  return model
+
 
 
 def Unet_with_slice(input_img, n_filters = 16 , dropout = 0.3 , batch_norm = True):

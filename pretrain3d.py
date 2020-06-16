@@ -69,14 +69,6 @@ def dice_coefficient_loss(y_true, y_pred):
 
 
 def weighted_dice_coefficient(y_true, y_pred, axis=(-3, -2, -1), smooth=0.00001):
-    """
-    Weighted dice coefficient. Default axis assumes a "channels first" data structure
-    :param smooth:
-    :param y_true:
-    :param y_pred:
-    :param axis:
-    :return:
-    """
     return K.mean(2. * (K.sum(y_true * y_pred,
                               axis=axis) + smooth/2)/(K.sum(y_true,
                                                             axis=axis) + K.sum(y_pred,
@@ -85,24 +77,7 @@ def weighted_dice_coefficient(y_true, y_pred, axis=(-3, -2, -1), smooth=0.00001)
 
 def weighted_dice_coefficient_loss(y_true, y_pred):
     return -weighted_dice_coefficient(y_true, y_pred)
-'''
-def survival_loss(y_true,y_pred):
-    sum = 0
-    print(y_true.shape[0])
-    for i in range(2):
 
-        all_greater = y_pred[y_true>y_true[i][0]]
-        print(all_greater)
-        if(len(all_greater)):
-            sum += y_pred[i][0] - K.eval(K.log(K.sum(K.exp(all_greater))))
-        print(sum)
-    #print(K.eval(sum))
-    return sum  
-
-hello1 = np.random.rand(10,1)
-hello2 = np.random.rand(10,1)
-survival_loss(hello1,hello2)
-'''  
 
 
 #model2 = load_model('tumor_segmentation_model.h5',custom_objects={'dice_coefficient_loss':dice_coefficient_loss , 'dice_coefficient':dice_coefficient})

@@ -36,11 +36,11 @@ def reverse_encode(a):
 	return np.argmax(a,axis=-1)
 
 
+import nibabel as nib
 
-
-model_to_predict1 = load_model('../first_240_155v2.h5',custom_objects={'dice_coef_loss':dice_coef_loss , 'dice_coef':dice_coef})
-#model_to_predict2 = load_model('../Models/survival_pred_240_155_1.h5',custom_objects={'dice_coef_loss':dice_coef_loss , 'f1_score':f1_score})
-#model_to_predict3 = load_model('../Models/survival_pred_240_155_2.h5',custom_objects={'dice_coef_loss':dice_coef_loss , 'f1_score':f1_score})
+#model_to_predict1 = load_model('../first_240_155v5.h5',custom_objects={'dice_coef_loss':dice_coef_loss , 'dice_coef':dice_coef})
+#model_to_predict2 = load_model('../second_240_155v5.h5',custom_objects={'dice_coef_loss':dice_coef_loss , 'dice_coef':dice_coef})
+model_to_predict3 = load_model('../240_240v8 (1).h5',custom_objects={'dice_coef_loss':dice_coef_loss , 'dice_coef':dice_coef})
 path = '../../Brats17TrainingData/LGG'
 all_images = os.listdir(path)
 #print(len(all_images))
@@ -48,7 +48,7 @@ all_images.sort()
 
 data = np.zeros((240,240,155,4))
 
-for i in range(45,47):
+for i in range(46,48):
   new_image = np.zeros((240,240,155,4))
   print(i)
   x_to = []
@@ -59,68 +59,119 @@ for i in range(45,47):
   modalities.sort()
   #data = []
   w = 0
+  print(len(modalities))
   for j in range(len(modalities)-1):
     #print(modalities[j])
     
     image_path = folder_path + '/' + modalities[j]
     if(image_path[-7:-1] + image_path[-1] == 'seg.nii'):
-      image_data2, image_header2 = load(image_path);
-      print("Entered ground truth")
+      img = nib.load(image_path);
+      image_data2 = img.get_data()
+      image_data2 = np.asarray(image_data2)
     else:
-      image_data, image_header = load(image_path);
+      img = nib.load(image_path);
+      image_data = img.get_data()
+      image_data = np.asarray(image_data)
       image_data = standardize(image_data)
       data[:,:,:,w] = image_data
       print("Entered modality")
+      print(w)
       w = w+1
-    
+
+  
+
   print(data.shape)
-  Y_hat = model_to_predict1.predict(data)
-  #print(Y_hat.shape)
+  new_image = np.zeros((155,240,240))
+  image_data3 = np.zeros((155,240,240))
+  for slice_no in range(0,155):
+    a = slice_no
+    X = data[:,:,slice_no,:]
+    X = X.reshape(1,240,240,4)
+    Y_hat = model_to_predict3.predict(X)
+    Y_hat = np.argmax(Y_hat,axis=-1)
+    new_image[slice_no,:,:] = Y_hat[0]
+    
+
+
+    #new_image[slice_no,:,:,:] = data[:,:,slice_no,:]
+    #image_data3[slice_no,:,:] = image_data2[:,:,slice_no]
+
+  
   image_data2[image_data2==4] = 3
+  image_data2 = image_data2.astype('float64')
+  print(np.unique(image_data2[:,:,70]))
+  print(image_data2.dtype)
+  print(new_image.dtype)
+  print(np.unique(new_image[70,:,:]))
+  imgplot2 = plt.imshow(image_data2[:,:,70])
+  plt.show(block=False)
+  #time.sleep(1)
+  plt.pause(4)
+  #plt.close()
+
+  imgplot = plt.imshow(new_image[70,:,:])
+  plt.show(block=False)
+  #time.sleep(1)
+  plt.pause(4)
+  plt.close()
+
+  #image_data3[image_data3==4] = 3
+  #image_data3 = one_hot_encode(image_data3)
+  #image_data3 = image_data3.astype('float64')
+
+  #print(model_to_predict3.evaluate(new_image,image_data3))
+  #print(new_image.dtype)
+  #print(image_data2.dtype)
+
+  #print(K.eval(dice_coef_loss(new_image,image_data2)))
+  #Y_hat = model_to_predict1.predict(data)
+  #print(Y_hat.shape)
+  #image_data2[image_data2==4] = 3
   #Y_hat[Y_hat > 0.6] = 1.0
   #Y_hat[Y_hat <= 0.6] = 0.0
-  Y_hat = np.argmax(Y_hat,axis=-1)
-  Y_hat = keras.utils.to_categorical(Y_hat,num_classes=4)
+  #
+  #Y_hat = keras.utils.to_categorical(Y_hat,num_classes=4)
   #print(Y_hat[0,100,100])
   #print(len(Y_hat[:,:,:,0]==1))
   #print(len(Y_hat[:,:,:,1]==1))
   #print(len(Y_hat[:,:,:,2]==1))
   #print(len(Y_hat[:,:,:,3]==1))
-  image_data2 = keras.utils.to_categorical(image_data2, num_classes = 4)
-  #image_data2 = one_hot_encode(image_data2)
-  print(K.eval(dice_coef_loss(Y_hat,image_data2)))
-  print(get_sens_spec_df(Y_hat,image_data2))
-  print(model_to_predict1.evaluate(x=data,y=image_data2)) 
-  print(model_to_predict1.metrics_names)
+  #image_data2 = keras.utils.to_categorical(image_data2, num_classes = 4)
+  #
+  #print(K.eval(dice_coef_loss(Y_hat,image_data2)))
+  #print(get_sens_spec_df(Y_hat,image_data2))
+  #print(model_to_predict1.evaluate(x=data,y=image_data2)) 
+  #print(model_to_predict1.metrics_names)
   #Combining results from all 3 dimensions
+
 '''
   for slice_no in range(0,240):
     a = slice_no
     X = data[slice_no,:,:,:]
     X = X.reshape(1,240,155,4)
-    Y_hat = model_to_predict3.predict(X)
-    new_image[a,:,:,:] = Y_hat[0,:,:,:]
-'''
-  
-
-'''
-  for slice_no in range(0,155):
-    a = slice_no
-    X = data[:,:,slice_no,:]
-    X = X.reshape(1,240,240,4)
     Y_hat = model_to_predict1.predict(X)
-    new_image[:,:,slice_no,:] += Y_hat[0,:,:,:]
+    new_image[a,:,:,:] = Y_hat[0,:,:,:]
 
+  
+'''
+
+
+'''
   for slice_no in range(0,240):
     a = slice_no
     X = data[:,slice_no,:,:]
     X = X.reshape(1,240,155,4)
     Y_hat = model_to_predict2.predict(X)
     new_image[:,a,:,:] += Y_hat[0,:,:,:]
-'''      
+      
 
-  
-  #new_image = new_image/3.0
+  image_data2[image_data2==4] = 3
+  Y_hat = new_image/3.0
+  Y_hat = np.argmax(Y_hat,axis=-1)
+  Y_hat = keras.utils.to_categorical(Y_hat,num_classes=4)
+  image_data2 = keras.utils.to_categorical(image_data2, num_classes = 4)
+  print(K.eval(dice_coef_loss(Y_hat,image_data2)))
+  print(get_sens_spec_df(Y_hat,image_data2))
   #print(new_image[100,100,100])
   #pred = pred.reshape(-1,5)
   #pred1 = np.argmax(new_image[:,:,:,1:],axis=3)
@@ -128,7 +179,7 @@ for i in range(45,47):
   #pred1[new_image[:,:,:,0] > 0.56] = 0         #average of probabilities from 3 directions
   #pred1 = pred1.astype('int64') 
   #image_data2 = image_data2.astype('int64')
-  
+'''  
 '''
   for slice_no in range(0,155):
     print(slice_no)
