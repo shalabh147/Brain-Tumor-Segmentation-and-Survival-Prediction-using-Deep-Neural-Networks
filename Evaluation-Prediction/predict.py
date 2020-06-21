@@ -38,17 +38,24 @@ def reverse_encode(a):
 
 import nibabel as nib
 
+def dice_coef_2(y_true, y_pred):
+    smooth = 1
+    y_true_f = K.flatten(y_true)
+    y_pred_f = K.flatten(y_pred)
+    intersection = K.sum(y_true_f * y_pred_f)
+    return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
+
 #model_to_predict1 = load_model('../first_240_155v5.h5',custom_objects={'dice_coef_loss':dice_coef_loss , 'dice_coef':dice_coef})
 #model_to_predict2 = load_model('../second_240_155v5.h5',custom_objects={'dice_coef_loss':dice_coef_loss , 'dice_coef':dice_coef})
-model_to_predict3 = load_model('../240_240v8 (1).h5',custom_objects={'dice_coef_loss':dice_coef_loss , 'dice_coef':dice_coef})
-path = '../../Brats17TrainingData/LGG'
+model_to_predict3 = load_model('../new_model_4 (1).h5',custom_objects={'dice_coef_2':dice_coef_2})
+path = '../../Brats17TrainingData/HGG'
 all_images = os.listdir(path)
 #print(len(all_images))
 all_images.sort()
 
 data = np.zeros((240,240,155,4))
 
-for i in range(46,48):
+for i in range(106,108):
   new_image = np.zeros((240,240,155,4))
   print(i)
   x_to = []
@@ -88,9 +95,18 @@ for i in range(46,48):
     X = data[:,:,slice_no,:]
     X = X.reshape(1,240,240,4)
     Y_hat = model_to_predict3.predict(X)
-    Y_hat = np.argmax(Y_hat,axis=-1)
-    new_image[slice_no,:,:] = Y_hat[0]
-    
+    #Y_hat = np.argmax(Y_hat,axis=-1)
+    new_image[slice_no,:,:] = Y_hat[:,:,0]
+    #new_image[new_image > 0.1] = 1
+    #new_image[new_image <= 0.1] = 0
+    #new_image[new_image==0] = 1
+    print(slice_no)
+    imgplot = plt.imshow(new_image[slice_no,:,:])
+    plt.show(block=False)
+    #time.sleep(1)
+    plt.pause(0.1)
+    plt.close()
+
 
 
     #new_image[slice_no,:,:,:] = data[:,:,slice_no,:]
@@ -98,6 +114,8 @@ for i in range(46,48):
 
   
   image_data2[image_data2==4] = 3
+  #image_data2[image_data2==2] = 1
+  #image_data2[image_data2==1] = 1
   image_data2 = image_data2.astype('float64')
   print(np.unique(image_data2[:,:,70]))
   print(image_data2.dtype)
