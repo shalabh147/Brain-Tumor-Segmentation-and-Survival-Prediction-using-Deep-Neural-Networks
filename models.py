@@ -5,12 +5,15 @@ import matplotlib.pyplot as plt
 #%matplotlib inline
 import tensorflow as tf
 import keras.backend as K
-import keras
-
+# import keras
+# from ensorflow import keras
+from keras import layers
 from keras.models import Model, load_model
 from keras.layers import Input, BatchNormalization, Activation, Dense, Dropout,Maximum
 from keras.layers.core import Lambda, RepeatVector, Reshape
 from keras.layers.convolutional import Conv2D, Conv2DTranspose,Conv3D,Conv3DTranspose,UpSampling2D
+# from tensorflow.keras.layers.convolutional import Conv2D, Conv2DTranspose,Conv3D,Conv3DTranspose,UpSampling2D
+# from tensorflow.keras.layers.convolutional import Conv2D, Conv2DTranspose,Conv3D,Conv3DTranspose,UpSampling2D
 from keras.layers.pooling import MaxPooling2D, GlobalMaxPool2D,MaxPooling3D
 from keras.layers.merge import concatenate, add
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau

@@ -55,7 +55,7 @@ model.summary()
 
 
 # data preprocessing starts here
-path = '../Brats17TrainingData/HGG'
+path = '../BRATS2017/Brats17TrainingData/HGG'
 all_images = os.listdir(path)
 #print(len(all_images))
 all_images.sort()
@@ -63,10 +63,11 @@ data = np.zeros((240,240,155,4))
 x_to = []
 y_to = []
 
-for i in range(2):
+for i in range(1):
   print(i)
 
   x = all_images[i]
+  print(x)
   folder_path = path + '/' + x;
   modalities = os.listdir(folder_path)
   modalities.sort()
@@ -114,15 +115,15 @@ for i in range(2):
       x_to.append(X)
       y_to.append(Y.reshape(240,240,1))
 
-      # imgplot = plt.imshow(X[:,:,0])
-      # plt.show(block=False)
-      # plt.pause(3)
-      # plt.close()
+      imgplot = plt.imshow(X[:,:,0])
+      plt.show(block=False)
+      plt.pause(100)
+      plt.close()
     
-      # imgplot = plt.imshow(Y)
-      # plt.show(block=False)
-      # plt.pause(3)
-      # plt.close()
+      imgplot = plt.imshow(Y)
+      plt.show(block=False)
+      plt.pause(3)
+      plt.close()
     
       
       for l in range(4):
