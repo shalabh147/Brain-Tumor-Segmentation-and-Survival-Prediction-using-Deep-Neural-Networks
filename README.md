@@ -3,7 +3,7 @@
 Keras implementation
 
 ## Dataset
-For accessing the BRATS dataset upto 2016, you need to create account with https://www.smir.ch. While for Brats dataset after 2016, create an accound with https://www.med.upenn.edu/sbia/brats2018/registration.html and apply for the dataset.
+BraTS 2017 and 2018 data can be found on Kaggle.
 
 ## Using the code
 You are free to use contents of this repo for academic and non-commercial purposes only.
@@ -13,16 +13,13 @@ As such, this code is not an implementation of a particular paper,and is combine
 
 - https://arxiv.org/pdf/1505.03540.pdf : Patch based Brain Tumor Segmentation
 - https://www.biorxiv.org/content/10.1101/760157v1.full.pdf : Encoder Decoder network with dice loss
-- https://arxiv.org/pdf/1802.10508v1.pdf : Unet Architecture
+- https://arxiv.org/pdf/1802.10508v1.pdf : Unet 3D
+- https://arxiv.org/abs/1606.04797 : VNet 3D
 - https://arxiv.org/pdf/1903.11593.pdf : Survival Prediction Idea of extracting features
 - https://link.springer.com/chapter/10.1007/978-3-319-75238-9_17 : Integrating results along the 3 axis and different models
 - https://link.springer.com/chapter/10.1007/978-3-319-75238-9_30: Inception U-Net
 - https://link.springer.com/chapter/10.1007/978-3-319-75238-9_15 : Pooling free DenseNet architecture
 
-
-## Key Points and Modifications
-- #####  Weighted-categorical-loss function has been used to tackle with the problem of imbalanced dataset.
-- ##### Both batch normalisation and dropout have been used to reduce overfitting,smoothen the optimisation curve and lead to faster convergence to global minima.
 
 
 ## Task
@@ -44,43 +41,43 @@ I have used BRATS 2017 training dataset for the analysis of the proposed methodo
 ## Dataset pre-processing 
 Model has been trained on only those slices having all 4 labels(0,1,2,4) to tackle class imbalance and label 4 has been converted into label 3 (so that finally the one-hot encoding has size 4).
 
-## Model Architecture 
-### Patch Based Basic U-Net Architecture :
-Consists of Encoder architecture,which encodes features while decreasing resolution and increasing feature maps, followed by an upsampling Decoder architecture which uses Transposed Convolution or Deconvolution to upsample the intermediate feature maps and retrieve the original resolution. 
-Training on patches of size 128*128 from the second dimension (2D slices of (240,155)).
-
-![](Captures/U-net.png)
-
-
-### Full Image U-Net
-Training on 2nd dimension of the images(2D slices of dimension 240*155) since 3D U-Net is computationally very expensive and hence undesirable. Limitation is unable to learn 3D neighbourhood features.
-
-### U-Net with Inception
-https://link.springer.com/chapter/10.1007/978-3-319-75238-9_30 shows inception model U-net gives better results than conventional U-Net architecture and is thus preferred. In inception model, convolutions and poolings are averaged over 1*1 , 3*3 and 5*5 sized kernels, thus taking care of high receptive fiels as well as integration of local and global features.
+## Model Architecture and Results
+### 3D U-Net Architecture :
 
 ![](Captures/Inception.png)
 
+We achieved a dice score of 0.74 with this architecture.
+![](Captures/UnetSegment.png)
 
+### 3D V-Net Architecture
+![](Captures/VNet.png)
 
-### Combining along the 3 views
-As shown by https://link.springer.com/chapter/10.1007/978-3-319-75238-9_17, I created different models for axial,sagittal and coronal 2D views of the 3D modality and trained on each of them and then the 3 models were combined to predict labels for each image. The combination can be performed using max or average of probabilities predicted by the 3 models for the 4 classes on each pixel.Then the final prediction is made using argmax function.
+We achieved a dice score of 0.68 with this.
+![](Captures/VNetSegment.png)
+
+### Combining along the 3 views(2D axes integration)
+Inspired by https://link.springer.com/chapter/10.1007/978-3-319-75238-9_17, I created different UNet models for axial,sagittal and coronal 2D views of the 3D modality and trained on each of them and then the 3 models were combined to predict labels for each image. The combination can be performed using average of probabilities predicted by the 3 models for the 4 classes on each pixel.Then the final prediction is made using argmax function.
 
 ![](Captures/ensembling.png)
 
+We achieved a dice score of 0.756 with this model for 4 class segmentation(Segmenting all the parts of tumor).
 
-### DenseNet Architecture with Dilated Convolutions
-As shown in https://link.springer.com/chapter/10.1007/978-3-319-75238-9_15 , the transition layers in Densely connected architecture were modified to replace Pooling layers with Dilated Convolutions(which increase receptive field without losing spatial information). Two different types of dense units were built, one containing bottleneck 1*1 convolutions to reduce parameters and thus computation and one without bottleneck.
+![](Captures/4class.png)
+
+We achieved a dice score of 0.937 with this model for 2 class segmentation(Segmenting only whole tumor and non tumor parts of brain)
+
+![](Captures/2class.png)
+
 
 
 ### Survival Prediction Model
-XGBoost Regression (Extreme gradient boosting regressor) has been found to perform really well in regression related tasks. It is one of the model used to train on features extracted from the bottleneck layer of the U-Net . This idea has been taken from https://arxiv.org/pdf/1903.11593.pdf where it has been shown that lung cancer survival features are somehow connected to the bottleneck layer features of the segmentation U-Net. Another network used is a feedforward neural network taking reduced features(using k-medoids clustering) from images and being trained for regression. 
-Also, a pretrained model from Brats 2017 winner Isensee et. al.(3D Unet) has been used to produce better segmentation bottleneck features that 2D Unet and a Cox Proportional Hazard model has been fit which gives a concordance index of 0.54 on the training set.
+Various methods have been tried for survival prediction of patients based on their MRI images.
+Inspired from https://link.springer.com/chapter/10.1007/978-3-319-75238-9_13 , our architecture comprises of convolutional blocks that extract survival related features from the MRI images concatenated with their corresponding segmented image(as a channel map), concatenates age of the patient with these feature maps and finally Fully Connected layers are applied. The model classifies the patients to be lying in one of the 3 categories according to their survival days.
 
+![](Captures/SurvPred.png)
+
+We achieved a testing accuracy of 51.07% while most of the SOTA techniques have about 55-57%. 
 
 ### Note : All images have been taken from the mentioned papers.
 
-## Training
-### Loss function
-Weighted categorical crossentropy function used as loss function in  brain tumor segmentation. One Hot encoding used and last layer activation is softmax. Trained on balanced dataset first to not let the network be overwhelmed by the dominant '0' label.
-   
 
