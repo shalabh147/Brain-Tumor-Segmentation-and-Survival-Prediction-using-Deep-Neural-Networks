@@ -44,16 +44,16 @@ Model has been trained on only those slices having all 4 labels(0,1,2,4) to tack
 ## Model Architecture and Results
 ### 3D U-Net Architecture :
 
-![](Captures/Inception.png)
+![](Captures/Unet3d.png)
 
 We achieved a dice score of 0.74 with this architecture.
-![](Captures/UnetSegment.png)
+![](Captures/unet_im.PNG)
 
 ### 3D V-Net Architecture
-![](Captures/VNet.png)
+![](Captures/Vnetarch.png)
 
 We achieved a dice score of 0.68 with this.
-![](Captures/VNetSegment.png)
+![](Captures/vnet_im.PNG)
 
 ### Combining along the 3 views(2D axes integration)
 Inspired by https://link.springer.com/chapter/10.1007/978-3-319-75238-9_17, I created different UNet models for axial,sagittal and coronal 2D views of the 3D modality and trained on each of them and then the 3 models were combined to predict labels for each image. The combination can be performed using average of probabilities predicted by the 3 models for the 4 classes on each pixel.Then the final prediction is made using argmax function.
@@ -62,11 +62,11 @@ Inspired by https://link.springer.com/chapter/10.1007/978-3-319-75238-9_17, I cr
 
 We achieved a dice score of 0.756 with this model for 4 class segmentation(Segmenting all the parts of tumor).
 
-![](Captures/4class.png)
+![](Captures/2d_4class_im.PNG)
 
 We achieved a dice score of 0.937 with this model for 2 class segmentation(Segmenting only whole tumor and non tumor parts of brain)
 
-![](Captures/2class.png)
+![](Captures/2d_2class_im.PNG)
 
 
 
@@ -74,7 +74,7 @@ We achieved a dice score of 0.937 with this model for 2 class segmentation(Segme
 Various methods have been tried for survival prediction of patients based on their MRI images.
 Inspired from https://link.springer.com/chapter/10.1007/978-3-319-75238-9_13 , our architecture comprises of convolutional blocks that extract survival related features from the MRI images concatenated with their corresponding segmented image(as a channel map), concatenates age of the patient with these feature maps and finally Fully Connected layers are applied. The model classifies the patients to be lying in one of the 3 categories according to their survival days.
 
-![](Captures/SurvPred.png)
+![](Captures/nice_cap.png)
 
 We achieved a testing accuracy of 51.07% while most of the SOTA techniques have about 55-57%. 
 
