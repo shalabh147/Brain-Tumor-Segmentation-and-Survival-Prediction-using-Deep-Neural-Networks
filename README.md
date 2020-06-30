@@ -46,13 +46,19 @@ Model has been trained on only those slices having all 4 labels(0,1,2,4) to tack
 
 ![](Captures/Unet3d.png)
 
-We achieved a dice score of 0.74 with this architecture.
+
+#### We achieved a dice score of 0.74 with this architecture.
+#### This is our second best model.
+
+### Results
 ![](Captures/unet_im.PNG)
 
 ### 3D V-Net Architecture
 ![](Captures/Vnetarch.png)
 
-We achieved a dice score of 0.68 with this.
+#### We achieved a dice score of 0.68 with this.
+
+### Results 
 ![](Captures/vnet_im.PNG)
 
 ### Combining along the 3 views(2D axes integration)
@@ -74,7 +80,7 @@ We achieved a dice score of 0.937 with this model for 2 class segmentation(Segme
 Various methods have been tried for survival prediction of patients based on their MRI images.
 Inspired from https://link.springer.com/chapter/10.1007/978-3-319-75238-9_13 , our architecture comprises of convolutional blocks that extract survival related features from the MRI images concatenated with their corresponding segmented image(as a channel map), concatenates age of the patient with these feature maps and finally Fully Connected layers are applied. The model classifies the patients to be lying in one of the 3 categories according to their survival days.
 
-![](Captures/nice_cap.png)
+![](Captures/nice_cap.PNG)
 
 We achieved a testing accuracy of 51.07% while most of the SOTA techniques have about 55-57%. 
 
