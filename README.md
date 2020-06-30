@@ -66,11 +66,11 @@ Inspired by https://link.springer.com/chapter/10.1007/978-3-319-75238-9_17, I cr
 
 ![](Captures/ensembling.png)
 
-We achieved a dice score of 0.756 with this model for 4 class segmentation(Segmenting all the parts of tumor).
+#### We achieved a dice score of 0.756 with this model for 4 class segmentation(Segmenting all the parts of tumor).
 
 ![](Captures/2d_4class_im.PNG)
 
-We achieved a dice score of 0.937 with this model for 2 class segmentation(Segmenting only whole tumor and non tumor parts of brain)
+#### We achieved a dice score of 0.937 with this model for 2 class segmentation(Segmenting only whole tumor and non tumor parts of brain)
 
 ![](Captures/2d_2class_im.PNG)
 
