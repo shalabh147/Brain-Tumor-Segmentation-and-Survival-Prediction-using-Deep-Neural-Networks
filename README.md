@@ -6,7 +6,7 @@ Keras implementation
 BraTS 2017 and 2018 data can be found on Kaggle.
 
 ## Using the code
-You are free to use contents of this repo for academic and non-commercial purposes only.
+Have a look at the LICENSE.
 
 ## Resources
 As such, this code is not an implementation of a particular paper,and is combined of many architectures and deep learning techniques from various research papers on Brain Tumor Segmentation and survival prediction. Some of the best resources used are mentioned below.
