@@ -1,6 +1,6 @@
 # Brain-Tumor-Segmentation-and-Survival-Prediction-using-Deep-Neural-Networks
 
-Keras implementation
+Keras implementation. Complete Report Link : https://www.cse.iitb.ac.in/~shalabhgupta/Report.pdf
 
 ## Dataset
 BraTS 2017 and 2018 data can be found on Kaggle.
